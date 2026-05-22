@@ -1,0 +1,7 @@
+{
+  "extends": "@flowform/typescript-config/node.json",
+  "compilerOptions": {
+    "baseUrl": "."
+  },
+  "include": ["**/*.ts", "!node_modules", "!drizzle"]
+}

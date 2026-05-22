@@ -1,0 +1,17 @@
+{
+  "name": "@flowform/env",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "zod": "^4.4.2"
+  },
+  "devDependencies": {
+    "@flowform/typescript-config": "workspace:*",
+    "@types/node": "^25.8.0",
+    "typescript": "^6.0.2"
+  }
+}

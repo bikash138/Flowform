@@ -1,0 +1,38 @@
+{
+  "name": "@flowform/database",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./connection": "./connection.ts",
+    "./constants": "./constants.ts",
+    "./seed": "./seed/plans.ts",
+    "./models/auth": "./models/auth.model.ts",
+    "./models/workspace": "./models/workspace.model.ts",
+    "./models/form": "./models/form.model.ts",
+    "./models/billing": "./models/billing.model.ts"
+  },
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx --env-file=.env seed/index.ts"
+  },
+  "dependencies": {
+    "@flowform/env": "workspace:*",
+    "@flowform/logger": "workspace:^",
+    "@flowform/typescript-config": "workspace:*",
+    "dotenv": "^17.4.1",
+    "drizzle-orm": "^0.45.2",
+    "nanoid": "^5.1.5",
+    "pg": "^8.21.0",
+    "uuidv7": "^1.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.8.0",
+    "@types/pg": "^8.20.0",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.21.0",
+    "typescript": "6.0.2"
+  }
+}

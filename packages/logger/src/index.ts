@@ -1,0 +1,23 @@
+import pino from "pino";
+import { env } from "@flowform/env";
+
+const isDev = env.node.env === "development";
+
+export const logger = pino({
+  level: env.node.logLevel,
+  transport: isDev
+    ? {
+        target: "pino-pretty",
+        options: {
+          colorize: true,
+          translateTime: "SYS:HH:MM:ss",
+          ignore: "pid,hostname",
+          messageFormat: "{msg}",
+        },
+      }
+    : undefined,
+});
+
+export function createLogger(module: string) {
+  return logger.child({ module });
+}
