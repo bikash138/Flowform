@@ -10,8 +10,8 @@ import {
   Preview,
   Section,
   Text,
-} from "@react-email/components";
-import type { EmailTemplateProps } from "../types";
+} from "react-email";
+import type { EmailTemplateProps } from "./types";
 
 // Minimal — white, clean, lots of whitespace. Brand presence is subtle.
 export function MinimalTemplate({

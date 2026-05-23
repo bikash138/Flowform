@@ -1,5 +1,6 @@
 import { roleEnum, workspaceInviteStatusEnum } from "./models/workspace.model";
 import { formStatusEnum } from "./models/form.model";
+import type { FormSettings, FormFont } from "./models/form.model";
 import { planIdEnum, workspacePlanStatusEnum } from "./models/billing.model";
 
 export const Role = {
@@ -34,6 +35,39 @@ export const FormStatus = {
   ARCHIVED: "ARCHIVED",
 } as const satisfies Record<string, (typeof formStatusEnum.enumValues)[number]>;
 export type FormStatus = (typeof FormStatus)[keyof typeof FormStatus];
+
+export const FormAccessType = {
+  PUBLIC: "public",
+  PASSWORD_PROTECTED: "password_protected",
+} as const satisfies Record<string, FormSettings["accessType"]>;
+export type FormAccessType = (typeof FormAccessType)[keyof typeof FormAccessType];
+
+export const ProgressBarStyle = {
+  BAR: "bar",
+  STEPS: "steps",
+  PERCENTAGE: "percentage",
+} as const satisfies Record<string, Extract<FormSettings["progressBar"], { enabled: true }>["style"]>;
+export type ProgressBarStyle = (typeof ProgressBarStyle)[keyof typeof ProgressBarStyle];
+
+export const FormLayout = {
+  VERTICAL: "vertical",
+  CONVERSATIONAL: "conversational",
+} as const satisfies Record<string, FormSettings["formLayout"]>;
+export type FormLayout = (typeof FormLayout)[keyof typeof FormLayout];
+
+export const FontSize = {
+  SM: "sm",
+  MD: "md",
+  LG: "lg",
+} as const satisfies Record<string, FormFont["fontSize"]>;
+export type FontSize = (typeof FontSize)[keyof typeof FontSize];
+
+export const LetterSpacing = {
+  TIGHT: "tight",
+  NORMAL: "normal",
+  WIDE: "wide",
+} as const satisfies Record<string, FormFont["letterSpacing"]>;
+export type LetterSpacing = (typeof LetterSpacing)[keyof typeof LetterSpacing];
 
 export const PlanId = {
   FREE: "FREE",

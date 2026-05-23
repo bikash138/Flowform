@@ -9,8 +9,8 @@ import {
   Preview,
   Section,
   Text,
-} from "@react-email/components";
-import type { EmailTemplateProps } from "../types";
+} from "react-email";
+import type { EmailTemplateProps } from "./types";
 
 // Split — top half is a full-width brandColor banner with the message,
 // bottom half is clean white with a numbered answer list. Magazine-style.

@@ -8,8 +8,9 @@ import {
   jsonb,
   uniqueIndex,
   index,
+  check,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { workspace } from "./workspace.model";
 
@@ -77,6 +78,11 @@ export const workspacePlan = pgTable(
   (t) => [
     index("workspace_plan_plan_idx").on(t.planId),
     index("workspace_plan_status_idx").on(t.status),
+    check("workspace_plan_form_count_non_negative", sql`${t.formCount} >= 0`),
+    check(
+      "workspace_plan_team_member_count_non_negative",
+      sql`${t.teamMemberCount} >= 0`,
+    ),
   ],
 );
 

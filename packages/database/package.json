@@ -7,10 +7,7 @@
     "./connection": "./connection.ts",
     "./constants": "./constants.ts",
     "./seed": "./seed/plans.ts",
-    "./models/auth": "./models/auth.model.ts",
-    "./models/workspace": "./models/workspace.model.ts",
-    "./models/form": "./models/form.model.ts",
-    "./models/billing": "./models/billing.model.ts"
+    "./models": "./models/index.ts"
   },
   "scripts": {
     "db:generate": "drizzle-kit generate",

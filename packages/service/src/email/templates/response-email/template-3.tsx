@@ -9,8 +9,8 @@ import {
   Preview,
   Section,
   Text,
-} from "@react-email/components";
-import type { EmailTemplateProps } from "../types";
+} from "react-email";
+import type { EmailTemplateProps } from "./types";
 
 // Card — each answer lives in its own elevated card. Structured, data-focused feel.
 export function CardTemplate({

@@ -111,6 +111,12 @@ export type FormContent = {
   logic: LogicRule[];
 };
 
+export type FormFont = {
+  fontFamily: string;
+  fontSize: "sm" | "md" | "lg";
+  letterSpacing: "tight" | "normal" | "wide";
+};
+
 export type FormTheme = {
   primaryColor: string;
   backgroundColor: string;      // form card background
@@ -138,8 +144,6 @@ export type FormTheme = {
   buttonRadius?: "sharp" | "rounded" | "pill"; // Next / Submit / Start buttons
   inputRadius?: "sharp" | "rounded" | "pill";  // input / select / textarea
 
-  // Typography
-  fontFamily: string;
   backgroundImage?: string | null;
 };
 
@@ -205,6 +209,7 @@ export const form = pgTable(
     publishVersion: integer("publish_version").notNull().default(0),
     draftContent: jsonb("draft_content").$type<FormContent>(),
     theme: jsonb("theme").notNull().$type<FormTheme>(),
+    font: jsonb("font").notNull().$type<FormFont>(),
     settings: jsonb("settings").notNull().$type<FormSettings>(),
     accessCode: text("access_code"),
     closeAt: timestamp("close_at"),
@@ -229,6 +234,8 @@ export const formPublishSnapshot = pgTable(
     publishVersion: integer("publish_version").notNull(),
     content: jsonb("content").notNull().$type<FormContent>(),
     theme: jsonb("theme").notNull().$type<FormTheme>(),
+    font: jsonb("font").notNull().$type<FormFont>(),
+    settings: jsonb("settings").notNull().$type<FormSettings>(),
     publishedAt: timestamp("published_at").notNull(),
   },
   (t) => [

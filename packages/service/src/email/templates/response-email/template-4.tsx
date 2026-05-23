@@ -9,8 +9,8 @@ import {
   Preview,
   Section,
   Text,
-} from "@react-email/components";
-import type { EmailTemplateProps } from "../types";
+} from "react-email";
+import type { EmailTemplateProps } from "./types";
 
 // Dark — charcoal background, light text, brandColor accent pops. Modern/tech feel.
 export function DarkTemplate({

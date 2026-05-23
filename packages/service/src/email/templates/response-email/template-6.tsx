@@ -9,8 +9,8 @@ import {
   Preview,
   Section,
   Text,
-} from "@react-email/components";
-import type { EmailTemplateProps } from "../types";
+} from "react-email";
+import type { EmailTemplateProps } from "./types";
 
 // Warm — centered layout, rounded pill badges for answers, soft background.
 // Friendly and approachable, suited for customer-facing forms.

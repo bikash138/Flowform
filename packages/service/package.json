@@ -1,0 +1,33 @@
+{
+  "name": "@flowform/services",
+  "version": "1.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./auth": "./src/auth/index.ts",
+    "./workspace": "./src/workspace/index.ts",
+    "./rbac": "./src/rbac.ts",
+    "./form": "./src/form/index.ts",
+    "./public": "./src/public/index.ts",
+    "./analytics": "./src/analytics/index.ts",
+    "./billing": "./src/billing/index.ts"
+  },
+  "devDependencies": {
+    "@flowform/typescript-config": "workspace:*",
+    "@types/react": "^19.0.0",
+    "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "@flowform/database": "workspace:*",
+    "@flowform/env": "workspace:*",
+    "@flowform/logger": "workspace:*",
+    "@flowform/redis": "workspace:*",
+    "@flowform/utils": "workspace:*",
+    "react-email": "^6.3.0",
+    "@trpc/server": "^11.17.0",
+    "better-auth": "^1.6.11",
+    "drizzle-orm": "^0.45.2",
+    "resend": "^6.12.3",
+    "zod": "^4.4.2"
+  }
+}
