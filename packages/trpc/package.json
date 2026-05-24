@@ -1,0 +1,21 @@
+{
+  "name": "@flowform/trpc",
+  "version": "1.0.0",
+  "private": true,
+  "exports": {
+    "./server": "./server/index.ts",
+    "./client": "./client/index.ts"
+  },
+  "devDependencies": {
+    "@flowform/typescript-config": "workspace:*",
+    "@types/express": "^5.0.6",
+    "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "@flowform/services": "workspace:*",
+    "@trpc/client": "^11.17.0",
+    "@trpc/server": "^11.17.0",
+    "trpc-to-openapi": "^3.2.0",
+    "zod": "^4.4.2"
+  }
+}

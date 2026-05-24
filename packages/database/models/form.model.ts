@@ -8,8 +8,9 @@ import {
   jsonb,
   index,
   uniqueIndex,
+  check,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { uuidv7 } from "uuidv7";
 import { user } from "./auth.model";
@@ -149,7 +150,7 @@ export type FormTheme = {
 
 export type FormSettings = {
   //FREE
-  accessType: "public" | "password_protected";
+  accessType: "public" | "unlisted" | "password_protected";
   collectEmail: boolean;
   progressBar:
     | { enabled: false }
@@ -221,6 +222,10 @@ export const form = pgTable(
     index("form_workspace_idx").on(t.workspaceId),
     index("form_user_idx").on(t.userId),
     index("form_status_idx").on(t.status),
+    check(
+      "access_code_required_when_password_protected",
+      sql`(${t.settings}->>'accessType') != 'password_protected' OR ${t.accessCode} IS NOT NULL`,
+    ),
   ],
 );
 

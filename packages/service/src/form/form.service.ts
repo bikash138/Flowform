@@ -22,17 +22,26 @@ import type { WorkspacePlanOutput } from "@/billing/billing.schema";
 import { CacheKeys } from "@/cache";
 import { FormRepository } from "./form.repo";
 import { hashAccessCode } from "./access-code.util";
-import { DEFAULT_THEME, DEFAULT_FONT, FREE_THEMES, getFreeThemeById } from "./free-themes";
-import { getProMaxThemeById, getAllProMaxThemeIds } from "./pro-max-themes";
+import {
+  DEFAULT_THEME,
+  DEFAULT_FONT,
+  FREE_THEMES,
+  getFreeThemeById,
+} from "./themes/free-themes";
+import {
+  getProMaxThemeById,
+  getAllProMaxThemeIds,
+} from "./themes/pro-max-themes";
 import {
   getProThemeById,
   getAllProThemeIds,
   PLAN_RANK,
   type ThemeTier,
-} from "./pro-themes";
+} from "./themes/pro-themes";
 import type {
   CreateFormInput,
   SyncFormInput,
+  PatchPublishInput,
   SetAccessCodeInput,
   CheckSlugInput,
   UpdateSettingsInput,
@@ -117,7 +126,7 @@ export class FormService {
   }
 
   //==== FORM CRUD ====
-  
+
   async createForm(
     input: CreateFormInput,
     workspaceId: string,
@@ -428,36 +437,55 @@ export class FormService {
     const filtered: Partial<FormSettings> = {};
 
     // FREE — always allowed
-    if (incoming.accessType !== undefined)   filtered.accessType = incoming.accessType;
-    if (incoming.collectEmail !== undefined)  filtered.collectEmail = incoming.collectEmail;
-    if (incoming.progressBar !== undefined)   filtered.progressBar = incoming.progressBar;
+    if (incoming.accessType !== undefined)
+      filtered.accessType = incoming.accessType;
+    if (incoming.collectEmail !== undefined)
+      filtered.collectEmail = incoming.collectEmail;
+    if (incoming.progressBar !== undefined)
+      filtered.progressBar = incoming.progressBar;
 
     // responseLimit: capped at remaining quota for this month, not the monthly ceiling
     if (incoming.responseLimit !== undefined) {
       const quota = await this.billingService.getRemainingQuota(workspaceId);
-      filtered.responseLimit = Math.min(incoming.responseLimit, quota.remaining);
+      filtered.responseLimit = Math.min(
+        incoming.responseLimit,
+        quota.remaining,
+      );
     }
 
     // closeAtDays: locked once the form has been published
     if (incoming.closeAtDays !== undefined && current.publishVersion === 0) {
-      filtered.closeAtDays = plan.features.customCloseDate ? incoming.closeAtDays : 10;
+      filtered.closeAtDays = plan.features.customCloseDate
+        ? incoming.closeAtDays
+        : 10;
     }
     if (plan.features.multiLanguage) {
-      if (incoming.languages !== undefined)        filtered.languages = incoming.languages;
-      if (incoming.defaultLanguage !== undefined)  filtered.defaultLanguage = incoming.defaultLanguage;
+      if (incoming.languages !== undefined)
+        filtered.languages = incoming.languages;
+      if (incoming.defaultLanguage !== undefined)
+        filtered.defaultLanguage = incoming.defaultLanguage;
     }
     if (plan.features.customBranding && incoming.navbar !== undefined) {
       filtered.navbar = incoming.navbar;
     }
-    if (plan.features.redirectOnComplete && incoming.redirectOnComplete !== undefined) {
+    if (
+      plan.features.redirectOnComplete &&
+      incoming.redirectOnComplete !== undefined
+    ) {
       filtered.redirectOnComplete = incoming.redirectOnComplete;
     }
 
     // PRO_MAX
-    if (plan.features.removeWatermark && incoming.removeWatermark !== undefined) {
+    if (
+      plan.features.removeWatermark &&
+      incoming.removeWatermark !== undefined
+    ) {
       filtered.removeWatermark = incoming.removeWatermark;
     }
-    if (plan.features.confirmationEmail && incoming.confirmationEmail !== undefined) {
+    if (
+      plan.features.confirmationEmail &&
+      incoming.confirmationEmail !== undefined
+    ) {
       filtered.confirmationEmail = incoming.confirmationEmail;
     }
 
@@ -488,15 +516,25 @@ export class FormService {
     await this.requireForm(input.formId, workspaceId);
 
     if (input.slug !== null) {
-      const available = await this.repo.isSlugAvailable(input.slug, input.formId);
+      const available = await this.repo.isSlugAvailable(
+        input.slug,
+        input.formId,
+      );
       if (!available) {
-        throw new TRPCError({ code: "CONFLICT", message: "This slug is already taken." });
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "This slug is already taken.",
+        });
       }
     }
 
-    const updated = await this.repo.updateByIdAndWorkspace(input.formId, workspaceId, {
-      slug: input.slug,
-    });
+    const updated = await this.repo.updateByIdAndWorkspace(
+      input.formId,
+      workspaceId,
+      {
+        slug: input.slug,
+      },
+    );
     if (!updated) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Form not found." });
     }
@@ -522,7 +560,8 @@ export class FormService {
     if (doc.status === "ARCHIVED") {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: "Archived forms cannot be published. Unarchive the form first.",
+        message:
+          "Archived forms cannot be published. Unarchive the form first.",
       });
     }
 
@@ -534,18 +573,25 @@ export class FormService {
     }
 
     const nextPublishVersion = doc.publishVersion + 1;
-    const isFirstPublish = doc.publishVersion === 0;
 
-    const updateData = {
+    const updateData: {
+      publishVersion: number;
+      hasDraft: boolean;
+      status: "PUBLISHED";
+      closeAt?: Date;
+    } = {
       publishVersion: nextPublishVersion,
       hasDraft: false,
-      status: "PUBLISHED" as const,
-      ...(isFirstPublish && (() => {
-        const settings = doc.settings as FormSettings;
-        const closeAtDays = settings.closeAtDays ?? 10;
-        return { closeAt: new Date(Date.now() + closeAtDays * 24 * 60 * 60 * 1000) };
-      })()),
+      status: "PUBLISHED",
     };
+
+    if (doc.publishVersion === 0) {
+      const settings = doc.settings as FormSettings;
+      const closeAtDays = settings.closeAtDays ?? 10;
+      updateData.closeAt = new Date(
+        Date.now() + closeAtDays * 24 * 60 * 60 * 1000,
+      );
+    }
 
     const updated = await this.repo.publish(
       formId,
@@ -556,6 +602,7 @@ export class FormService {
         content: doc.draftContent as FormContent,
         theme: doc.theme as FormTheme,
         font: doc.font as FormFont,
+        settings: doc.settings as FormSettings,
       },
       updateData,
     );
@@ -564,9 +611,60 @@ export class FormService {
       throw new TRPCError({ code: "NOT_FOUND", message: "Form not found." });
     }
 
+    if (doc.publishVersion > 0) {
+      await this.cache.del(CacheKeys.public.snapshot(formId, doc.publishVersion));
+    }
+
     log.info(
-      { formId, publishVersion: nextPublishVersion, closeAt: updateData.closeAt },
+      {
+        formId,
+        publishVersion: nextPublishVersion,
+        closeAt: updateData.closeAt,
+      },
       "Form published",
+    );
+    return this.toDetail(updated);
+  }
+
+  async patchPublish(
+    input: PatchPublishInput,
+    workspaceId: string,
+  ): Promise<FormDetail> {
+    const doc = await this.requireForm(input.formId, workspaceId);
+
+    if (doc.publishVersion === 0) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Form has not been published yet. Use publish instead.",
+      });
+    }
+
+    if (input.editVersion < doc.editVersion) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "Form was modified by someone else. Please resync.",
+      });
+    }
+
+    const updated = await this.repo.patchPublish(
+      input.formId,
+      workspaceId,
+      input.editVersion,
+      input.draftContent as FormContent,
+    );
+
+    if (!updated) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "Form was modified by someone else. Please resync.",
+      });
+    }
+
+    await this.cache.del(CacheKeys.public.snapshot(input.formId, doc.publishVersion));
+
+    log.info(
+      { formId: input.formId, publishVersion: doc.publishVersion },
+      "Form patch published",
     );
     return this.toDetail(updated);
   }

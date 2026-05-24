@@ -6,6 +6,7 @@ import {
   FormLayout,
   FontSize,
   LetterSpacing,
+  BorderRadius,
 } from "@flowform/database/constants";
 
 //Input Schemas
@@ -46,6 +47,12 @@ export const SyncFormInputSchema = z.object({
   editVersion: z.number().int().positive(),
 });
 
+export const PatchPublishInputSchema = z.object({
+  formId: z.string().min(1),
+  draftContent: z.unknown(),
+  editVersion: z.number().int().positive(),
+});
+
 export const SetAccessCodeInputSchema = z.object({
   formId: z.string().min(1),
   accessCode: z
@@ -67,7 +74,7 @@ export const CheckSlugInputSchema = z.object({
 
 //Output Schemas
 
-const radiusEnum = z.enum(["sharp", "rounded", "pill"]);
+const radiusEnum = z.enum(BorderRadius);
 
 export const FormFontSchema = z.object({
   fontFamily: z.string().min(1).max(100),
@@ -237,6 +244,7 @@ export type ArchiveFormInput = z.infer<typeof ArchiveFormInputSchema>;
 export type DeleteFormInput = z.infer<typeof DeleteFormInputSchema>;
 export type DuplicateFormInput = z.infer<typeof DuplicateFormInputSchema>;
 export type SyncFormInput = z.infer<typeof SyncFormInputSchema>;
+export type PatchPublishInput = z.infer<typeof PatchPublishInputSchema>;
 export type SetAccessCodeInput = z.infer<typeof SetAccessCodeInputSchema>;
 export type CheckSlugInput = z.infer<typeof CheckSlugInputSchema>;
 export type UpdateSettingsInput = z.infer<typeof UpdateSettingsInputSchema>;

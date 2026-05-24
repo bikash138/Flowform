@@ -1,6 +1,6 @@
 import { roleEnum, workspaceInviteStatusEnum } from "./models/workspace.model";
 import { formStatusEnum } from "./models/form.model";
-import type { FormSettings, FormFont } from "./models/form.model";
+import type { FormSettings, FormFont, FormTheme, QuestionType as QuestionTypeValue } from "./models/form.model";
 import { planIdEnum, workspacePlanStatusEnum } from "./models/billing.model";
 
 export const Role = {
@@ -36,8 +36,32 @@ export const FormStatus = {
 } as const satisfies Record<string, (typeof formStatusEnum.enumValues)[number]>;
 export type FormStatus = (typeof FormStatus)[keyof typeof FormStatus];
 
+export const BorderRadius = {
+  SHARP: "sharp",
+  ROUNDED: "rounded",
+  PILL: "pill",
+} as const satisfies Record<string, FormTheme["borderRadius"]>;
+export type BorderRadius = (typeof BorderRadius)[keyof typeof BorderRadius];
+
+export const QuestionType = {
+  SHORT_TEXT: "short_text",
+  LONG_TEXT: "long_text",
+  EMAIL: "email",
+  NUMBER: "number",
+  SELECT: "select",
+  RADIO: "radio",
+  CHECKBOX: "checkbox",
+  RATING: "rating",
+  DATE: "date",
+  PHONE: "phone",
+  URL: "url",
+  YES_NO: "yes_no",
+} as const satisfies Record<string, QuestionTypeValue>;
+export type QuestionType = (typeof QuestionType)[keyof typeof QuestionType];
+
 export const FormAccessType = {
   PUBLIC: "public",
+  UNLISTED: "unlisted",
   PASSWORD_PROTECTED: "password_protected",
 } as const satisfies Record<string, FormSettings["accessType"]>;
 export type FormAccessType = (typeof FormAccessType)[keyof typeof FormAccessType];

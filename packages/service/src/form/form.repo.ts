@@ -46,7 +46,15 @@ export type CreateSnapshotData = {
   content: FormContent;
   theme: FormTheme;
   font: FormFont;
+  settings: FormSettings;
 };
+
+export type PatchSnapshotData = Partial<{
+  content: FormContent;
+  theme: FormTheme;
+  font: FormFont;
+  settings: FormSettings;
+}>;
 
 export class FormRepository {
   private get db() {
@@ -175,6 +183,7 @@ export class FormRepository {
         content: snapshot.content,
         theme: snapshot.theme,
         font: snapshot.font,
+        settings: snapshot.settings,
         publishedAt: new Date(),
       });
       const [doc] = await tx
@@ -199,7 +208,66 @@ export class FormRepository {
       content: data.content,
       theme: data.theme,
       font: data.font,
+      settings: data.settings,
       publishedAt: new Date(),
+    });
+  }
+
+  async updateSnapshot(
+    formId: string,
+    publishVersion: number,
+    data: PatchSnapshotData,
+  ): Promise<void> {
+    if (Object.keys(data).length === 0) return;
+    await this.db
+      .update(formPublishSnapshot)
+      .set(data)
+      .where(
+        and(
+          eq(formPublishSnapshot.formId, formId),
+          eq(formPublishSnapshot.publishVersion, publishVersion),
+        ),
+      );
+  }
+
+  async patchPublish(
+    formId: string,
+    workspaceId: string,
+    expectedEditVersion: number,
+    content: FormContent,
+  ): Promise<FormRecord | null> {
+    return this.db.transaction(async (tx) => {
+      const [doc] = await tx
+        .update(form)
+        .set({
+          draftContent: content,
+          hasDraft: false,
+          editVersion: expectedEditVersion + 1,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(form.id, formId),
+            eq(form.workspaceId, workspaceId),
+            eq(form.editVersion, expectedEditVersion),
+            eq(form.isDeleted, false),
+          ),
+        )
+        .returning();
+
+      if (!doc) return null;
+
+      await tx
+        .update(formPublishSnapshot)
+        .set({ content, theme: doc.theme, font: doc.font, settings: doc.settings })
+        .where(
+          and(
+            eq(formPublishSnapshot.formId, formId),
+            eq(formPublishSnapshot.publishVersion, doc.publishVersion),
+          ),
+        );
+
+      return doc;
     });
   }
 
