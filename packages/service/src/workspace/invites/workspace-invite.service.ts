@@ -4,9 +4,9 @@ import { createLogger } from "@flowform/logger";
 import { env } from "@flowform/env";
 import { CacheService } from "@flowform/redis";
 import { WorkspaceInviteStatus } from "@flowform/database/constants";
-import { CacheKeys } from "@/cache";
-import { BillingService } from "@/billing/billing.service";
-import { EmailService } from "@/email/email.service";
+import { CacheKeys } from "../../cache";
+import { BillingService } from "../../billing/billing.service";
+import { EmailService } from "../../email/email.service";
 import { WorkspaceInviteRepository } from "./workspace-invite.repo";
 import type {
   SendInviteInput,

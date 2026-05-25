@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { createLogger } from "@flowform/logger";
 import { CacheService } from "@flowform/redis";
 import type { Tx } from "@flowform/database/connection";
-import { CacheKeys, TTL } from "@/cache";
+import { CacheKeys, TTL } from "../cache";
 import { BillingRepository } from "./billing.repo";
 import type {
   ActivatePlanInput,

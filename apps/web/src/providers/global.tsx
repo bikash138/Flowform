@@ -5,7 +5,6 @@ import { createTRPCClient, httpBatchLink } from "@flowform/trpc/client";
 import { useState } from "react";
 import { TRPCProvider } from "@/utils/trpc";
 import { ServerRouter } from "@flowform/trpc/client";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -43,17 +42,10 @@ export function Provider({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <TRPCProvider trpcClient={trpcClient as never} queryClient={queryClient}>
-        <NextThemesProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <TooltipProvider>
-            {children}
-            <Toaster />
-          </TooltipProvider>
-        </NextThemesProvider>
+        <TooltipProvider>
+          {children}
+          <Toaster />
+        </TooltipProvider>
       </TRPCProvider>
     </QueryClientProvider>
   );

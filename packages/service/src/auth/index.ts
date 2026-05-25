@@ -2,13 +2,8 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { toNodeHandler } from "better-auth/node";
-import {
-  getDb,
-  user,
-  session,
-  account,
-  verification,
-} from "@flowform/database";
+import { getDb } from "@flowform/database/connection";
+import { user, session, account, verification } from "@flowform/database/models";
 import { env } from "@flowform/env";
 import { createLogger } from "@flowform/logger";
 import { WorkspaceCoreService } from "../workspace";

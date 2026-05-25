@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { QuestionType } from "@flowform/database";
+import type { QuestionType } from "@flowform/database/models";
 
 // ─── Input Schemas ────────────────────────────────────────────────────────────
 

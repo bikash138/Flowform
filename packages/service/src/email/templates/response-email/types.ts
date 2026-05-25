@@ -1,4 +1,4 @@
-import type { AnswerEntry } from "@flowform/database";
+import type { AnswerEntry } from "@flowform/database/models";
 
 export type EmailTemplateProps = {
   brandName: string;

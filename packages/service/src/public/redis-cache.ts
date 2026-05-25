@@ -1,6 +1,6 @@
 import { CacheService } from "@flowform/redis";
-import { CacheKeys } from "@/cache/keys";
-import { TTL } from "@/cache/ttl";
+import { CacheKeys } from "../cache/keys";
+import { TTL } from "../cache/ttl";
 
 const cache = new CacheService();
 

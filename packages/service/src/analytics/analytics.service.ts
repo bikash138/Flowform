@@ -4,8 +4,8 @@ import type { AnswerEntry, FormContent } from "@flowform/database/models";
 import { createLogger } from "@flowform/logger";
 import { CacheService } from "@flowform/redis";
 
-import { CacheKeys } from "@/cache/keys";
-import { TTL } from "@/cache/ttl";
+import { CacheKeys } from "../cache/keys";
+import { TTL } from "../cache/ttl";
 
 import { AnalyticsRepository } from "./analytics.repo";
 import type {

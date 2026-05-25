@@ -9,9 +9,9 @@ import type {
   AnswerEntry,
   Question,
 } from "@flowform/database/models";
-import { BillingService } from "@/billing/billing.service";
+import { BillingService } from "../billing/billing.service";
 import { PublicFormRepository } from "./public.repo";
-import { verifyAccessCode } from "@/form/access-code.util";
+import { verifyAccessCode } from "../form/access-code.util";
 import { detectDevice, isValidTimezone, lookupGeo } from "./geo";
 import {
   checkRateLimit,

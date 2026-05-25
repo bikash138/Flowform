@@ -16,10 +16,10 @@ import type {
   EndPage,
 } from "@flowform/database/models";
 import { CacheService } from "@flowform/redis";
-import { BillingService } from "@/billing/billing.service";
-import { AnalyticsRepository } from "@/analytics/analytics.repo";
-import type { WorkspacePlanOutput } from "@/billing/billing.schema";
-import { CacheKeys } from "@/cache";
+import { BillingService } from "../billing/billing.service";
+import { AnalyticsRepository } from "../analytics/analytics.repo";
+import type { WorkspacePlanOutput } from "../billing/billing.schema";
+import { CacheKeys } from "../cache";
 import { FormRepository } from "./form.repo";
 import { hashAccessCode } from "./access-code.util";
 import {

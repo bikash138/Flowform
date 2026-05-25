@@ -2,13 +2,13 @@ import { TRPCError } from "@trpc/server";
 import { createLogger } from "@flowform/logger";
 import { Role } from "@flowform/database/constants";
 import type { WorkspaceRecord } from "@flowform/database/models";
-import { BillingService } from "@/billing/billing.service";
 import { WorkspaceCoreRepository } from "./workspace-core.repo";
 import type {
   CreateWorkspaceInput,
   UpdateWorkspaceInput,
   WorkspaceSummary,
 } from "./workspace-core.schema";
+import { BillingService } from "../../billing";
 
 const log = createLogger("workspace-core-service");
 

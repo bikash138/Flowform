@@ -38,7 +38,7 @@ export const billingRouter = router({
     .input(ActivatePlanInputSchema.omit({ workspaceId: true }))
     .output(WorkspacePlanOutputSchema)
     .mutation(async ({ ctx, input }) => {
-      const workspace = await workspaceCoreService.getById(ctx.workspaceId, ctx.role);
+      const workspace = await workspaceCoreService.getWorksapaceById(ctx.workspaceId, ctx.role);
       if (workspace.isPersonal) {
         throw new TRPCError({
           code: "BAD_REQUEST",

@@ -1,6 +1,6 @@
 import z from "zod";
 import { WorkspaceRoleSchema } from "../../rbac";
-import { Role } from "@flowform/database";
+import { Role } from "@flowform/database/constants";
 
 //Inputs
 export const UpdateMemberRoleInputSchema = z.object({

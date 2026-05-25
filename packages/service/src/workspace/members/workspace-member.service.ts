@@ -2,8 +2,8 @@ import { TRPCError } from "@trpc/server";
 import { createLogger } from "@flowform/logger";
 import { Role } from "@flowform/database/constants";
 import { CacheService } from "@flowform/redis";
-import { BillingService } from "@/billing/billing.service";
-import { CacheKeys, TTL } from "@/cache";
+import { BillingService } from "../../billing/billing.service";
+import { CacheKeys, TTL } from "../../cache";
 import { WorkspaceMemberRepository } from "./workspace-member.repo";
 import type {
   UpdateMemberRoleInput,
