@@ -169,7 +169,6 @@ export const formRouter = router({
     .meta({
       openapi: { method: "GET", path: getPath("/themes"), tags: TAGS },
     })
-    .input(z.object({}))
     .output(ListThemesOutputSchema)
     .query(() => formService.listThemes()),
 

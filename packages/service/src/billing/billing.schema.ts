@@ -51,6 +51,28 @@ export const FormUsageOutputSchema = z.object({
   limit: z.number().nullable(),
 });
 
+const PlanFeatureItemSchema = z.object({
+  label: z.string(),
+  description: z.string(),
+});
+
+const PlanFeatureGroupSchema = z.object({
+  value: z.string(),
+  label: z.string(),
+  items: z.array(PlanFeatureItemSchema),
+});
+
+export const PlanCatalogItemSchema = z.object({
+  id: z.enum(PlanId),
+  name: z.string(),
+  price: z.string(),
+  period: z.string(),
+  tagline: z.string(),
+  features: z.array(PlanFeatureGroupSchema),
+});
+
+export const PlanCatalogOutputSchema = z.array(PlanCatalogItemSchema);
+
 export type ActivatePlanInput = z.infer<typeof ActivatePlanInputSchema>;
 export type GetRemainingQuotaInput = z.infer<typeof GetRemainingQuotaInputSchema>;
 export type WorkspacePlanOutput = z.infer<typeof WorkspacePlanOutputSchema>;

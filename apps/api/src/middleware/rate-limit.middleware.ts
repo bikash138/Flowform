@@ -39,6 +39,6 @@ export const globalLimiter = createLimiter({
 export const authLimiter = createLimiter({
   keyPrefix: "auth",
   windowMs: 15 * 60 * 1000,
-  limit: 20,
+  limit: 20000,
   message: "Too many auth attempts. Please try again later.",
 });

@@ -42,8 +42,8 @@ export function SignupSwappableSection({
       });
       if (!callbackUrl && result.data) {
         const dest = result.data.user.personalWorkspaceId
-          ? `/workspace/${result.data.user.personalWorkspaceId}`
-          : "/workspace";
+          ? `/ws/${result.data.user.personalWorkspaceId}`
+          : "/ws";
         router.push(dest);
       }
     },

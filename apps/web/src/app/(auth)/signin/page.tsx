@@ -36,8 +36,8 @@ export default function SignInPage() {
       // Only manually redirect if Better Auth isn't handling a callbackUrl
       if (!callbackUrl && result.data) {
         const dest = result.data.user.personalWorkspaceId
-          ? `/workspace/${result.data.user.personalWorkspaceId}`
-          : "/workspace";
+          ? `/ws/${result.data.user.personalWorkspaceId}`
+          : "/ws";
         router.push(dest);
       }
     },

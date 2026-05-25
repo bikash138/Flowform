@@ -1,6 +1,9 @@
-import { WorkspaceNavbar } from "@/components/user/workspace/workspace-navbar";
-import { WorkspaceSidebar } from "@/components/user/workspace/workspace-sidebar";
-import WorkspaceOverviewPage from "@/components/user/workspace/workspace-overview";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import {
+  WorkspaceNavbar,
+  WorkspaceSidebar,
+  WorkspaceOverviewSection,
+} from "@/components/user/workspace";
 
 export default function Page({
   params,
@@ -8,14 +11,14 @@ export default function Page({
   params: Promise<{ workspaceId: string }>;
 }) {
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-background">
-      <WorkspaceNavbar />
-      <main className="flex flex-1 overflow-hidden">
-        <WorkspaceSidebar />
+    <SidebarProvider>
+      <WorkspaceSidebar />
+      <SidebarInset>
+        <WorkspaceNavbar />
         <div className="flex flex-1 overflow-y-auto">
-          <WorkspaceOverviewPage params={params} />
+          <WorkspaceOverviewSection params={params} />
         </div>
-      </main>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

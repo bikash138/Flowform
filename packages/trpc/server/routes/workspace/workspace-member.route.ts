@@ -24,7 +24,6 @@ export const workspaceMembersRouter = router({
         tags: TAGS,
       },
     })
-    .input(z.object({}))
     .output(z.array(MemberSummarySchema))
     .query(({ ctx }) => workspaceMemberService.listMembers(ctx.workspaceId)),
 
@@ -65,7 +64,6 @@ export const workspaceMembersRouter = router({
         tags: TAGS,
       },
     })
-    .input(z.object({}))
     .output(z.object({ success: z.literal(true) }))
     .mutation(async ({ ctx }) => {
       await workspaceMemberService.leaveMember(ctx.workspaceId, ctx.userId, ctx.role);

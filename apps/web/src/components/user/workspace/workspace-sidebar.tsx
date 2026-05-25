@@ -2,58 +2,74 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import Image from "next/image";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import {
   Plus,
   Search,
-  LayoutGrid,
-  ChevronDown,
-  ChevronUp,
   Settings,
   LogOut,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  ArrowUpCircle,
+  Crown,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useParams, usePathname, useRouter } from "next/navigation";
-import { useWorkspaces, useWorkspace } from "@/hooks/user/use-workspace-core";
-import { CreateWorkspaceModal } from "@/components/modals/create-workspace-modal";
-import { CreateFormModal } from "@/components/modals/create-form-modal";
-import { WorkspaceSettingsModal } from "@/components/modals/workspace-settings/workspace-settings-modal";
-import { SignOutModal } from "@/components/modals/sign-out-modal";
-import { Spinner } from "@/components/ui/spinner";
-import { authClient } from "@/lib/auth";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarSeparator,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
+import { authClient } from "@/lib/auth";
+import { useWorkspacePlan } from "@/hooks/user/use-billing";
+import { useWorkspaces, useWorkspace } from "@/hooks/user/use-workspace-core";
+import { CreateWorkspaceModal } from "@/components/modals/create-workspace-modal";
+import { CreateFormModal } from "@/components/modals/create-form-modal";
+import { WorkspaceSettingsModal } from "@/components/modals/workspace-settings/workspace-settings-modal";
+import { SignOutModal } from "@/components/modals/sign-out-modal";
+import { PlansModal } from "@/components/modals/plans-modal";
 
 export function WorkspaceSidebar() {
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
+
   const selectedWorkspace = params.workspaceId as string;
 
   const [privateExpanded, setPrivateExpanded] = useState(true);
   const [sharedExpanded, setSharedExpanded] = useState(true);
-  const [createWorkspaceModalOpen, setCreateWorkspaceModalOpen] = useState(false);
-  const [createFormModalOpen, setCreateFormModalOpen] = useState(false);
-  const [workspaceSettingsOpen, setWorkspaceSettingsOpen] = useState(false);
+  const [createWorkspaceOpen, setCreateWorkspaceOpen] = useState(false);
+  const [createFormOpen, setCreateFormOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
+  const [plansOpen, setPlansOpen] = useState(false);
 
   const { data: workspaces = [], isLoading } = useWorkspaces();
   const { data: currentWorkspace } = useWorkspace(selectedWorkspace);
+  const { data: plan } = useWorkspacePlan(selectedWorkspace);
   const { data: session } = authClient.useSession();
+
   const user = session?.user ?? null;
+  const planId = plan?.planId ?? "FREE";
 
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -66,226 +82,256 @@ export function WorkspaceSidebar() {
   const isPollsTab = pathname.includes("/polls");
 
   const getWorkspacePath = (wsId: string) => {
-    if (isFormsTab) return `/workspace/${wsId}/forms`;
-    if (isPollsTab) return `/workspace/${wsId}/polls`;
-    return `/workspace/${wsId}`;
+    if (isFormsTab) return `/ws/${wsId}/forms`;
+    if (isPollsTab) return `/ws/${wsId}/polls`;
+    return `/ws/${wsId}`;
   };
 
+  const planButton = {
+    FREE:    { label: "View Plans",   icon: Sparkles,       className: "bg-foreground text-background hover:bg-foreground/90" },
+    PRO:     { label: "Upgrade",      icon: ArrowUpCircle,  className: "bg-foreground text-background hover:bg-foreground/90" },
+    PRO_MAX: { label: "See Features", icon: Crown,          className: "bg-foreground text-background hover:bg-foreground/90" },
+  }[planId] ?? { label: "View Plans", icon: Sparkles, className: "bg-foreground text-background hover:bg-foreground/90" };
+
+  const PlanIcon = planButton.icon;
+
+  const isFormsPage = pathname.includes("/forms");
+
   return (
-    <aside className="flex flex-col w-[200px] border-r border-border bg-background shrink-0 h-full">
-      {/* Contextual Create Button */}
-      <div className="p-3 pb-2">
-        {isFormsTab ? (
-          <CreateFormModal
-            workspaceId={selectedWorkspace}
-            open={createFormModalOpen}
-            onOpenChange={setCreateFormModalOpen}
-          >
-            <Button className="w-full bg-primary text-primary-foreground hover:bg-primary-dark font-semibold text-sm h-9 gap-1.5">
-              <Plus className="size-4" />
-              Create a Form
-            </Button>
-          </CreateFormModal>
-        ) : isPollsTab ? (
-          <Button className="w-full bg-primary text-primary-foreground hover:bg-primary-dark font-semibold text-sm h-9 gap-1.5">
-            <Plus className="size-4" />
-            Launch a Poll
-          </Button>
-        ) : (
-          <CreateWorkspaceModal
-            open={createWorkspaceModalOpen}
-            onOpenChange={setCreateWorkspaceModalOpen}
-          >
-            <Button className="w-full bg-primary text-primary-foreground hover:bg-primary-dark font-semibold text-sm h-9 gap-1.5">
-              <Plus className="size-4" />
-              New Workspace
-            </Button>
-          </CreateWorkspaceModal>
-        )}
-      </div>
-
-      {/* Search Bar */}
-      <div className="px-3 pb-2">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-          <Input
-            placeholder="Search"
-            className="h-8 pl-8 text-sm border-border bg-background text-foreground placeholder:text-muted-foreground hover:border-primary/40 focus-visible:ring-primary/20 focus-visible:border-primary transition-all duration-200"
-          />
-        </div>
-      </div>
-
-      <Separator className="bg-border" />
-
-      {/* Workspaces Section */}
-      <ScrollArea className="flex-1">
-        <div className="p-3">
-          {/* Workspaces Header */}
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5">
-              <LayoutGrid className="size-3.5 text-muted-foreground" />
-              <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                Workspaces
+    <>
+      <Sidebar collapsible="icon">
+        {/* ── Header: Logo ── */}
+        <SidebarHeader className="border-b border-sidebar-border h-12 flex items-center px-3">
+          <Link href="/" className="flex items-center gap-2 min-w-0">
+            <Image
+              src="/logo.svg"
+              alt="Flowform"
+              width={26}
+              height={26}
+              className="size-6.5 shrink-0"
+            />
+            {!isCollapsed && (
+              <span className="text-base font-bold tracking-tight text-foreground truncate [font-family:var(--font-jakarta-sans)]">
+                Flowform
               </span>
-            </div>
-            <TooltipProvider delayDuration={200}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    className="size-5 text-muted-foreground hover:text-foreground"
-                    onClick={() => setWorkspaceSettingsOpen(true)}
+            )}
+          </Link>
+        </SidebarHeader>
+
+        <SidebarContent className="gap-0">
+          {/* ── Actions ── */}
+          <SidebarGroup className="px-2 pt-3 pb-1">
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {/* Create */}
+                <SidebarMenuItem>
+                  {isFormsPage ? (
+                    <CreateFormModal
+                      workspaceId={selectedWorkspace}
+                      open={createFormOpen}
+                      onOpenChange={setCreateFormOpen}
+                    >
+                      <SidebarMenuButton tooltip="Create a Form" className="font-medium">
+                        <Plus />
+                        <span>Create a Form</span>
+                      </SidebarMenuButton>
+                    </CreateFormModal>
+                  ) : (
+                    <CreateWorkspaceModal
+                      open={createWorkspaceOpen}
+                      onOpenChange={setCreateWorkspaceOpen}
+                    >
+                      <SidebarMenuButton tooltip="New Workspace" className="font-medium">
+                        <Plus />
+                        <span>New Workspace</span>
+                      </SidebarMenuButton>
+                    </CreateWorkspaceModal>
+                  )}
+                </SidebarMenuItem>
+
+                {/* Search */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Search">
+                    <Search />
+                    <span>Search</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                {/* Settings */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    tooltip="Workspace settings"
+                    onClick={() => setSettingsOpen(true)}
                   >
-                    <Settings className="size-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">Manage workspace</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+                    <Settings />
+                    <span>Settings</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
 
-          <WorkspaceSettingsModal
-            open={workspaceSettingsOpen}
-            onOpenChange={setWorkspaceSettingsOpen}
-            workspace={currentWorkspace ? {
-              id: currentWorkspace.id,
-              title: currentWorkspace.title,
-              logo: currentWorkspace.logo,
-              isPersonal: currentWorkspace.isPersonal,
-              myRole: currentWorkspace.myRole,
-            } : undefined}
-          />
+          <SidebarSeparator />
 
-          {/* Private Section */}
-          <div className="mt-3">
-            <Collapsible open={privateExpanded} onOpenChange={setPrivateExpanded}>
-              <CollapsibleTrigger asChild>
-                <button className="flex items-center justify-between w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-1 px-1 cursor-pointer">
-                  <span>Private</span>
-                  {privateExpanded ? (
-                    <ChevronUp className="size-3" />
-                  ) : (
-                    <ChevronDown className="size-3" />
-                  )}
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="space-y-0.5">
-                  {isLoading ? (
-                    <div className="flex justify-center py-4 text-muted-foreground">
-                      <Spinner className="size-4" />
-                    </div>
-                  ) : privateWorkspaces.length === 0 ? (
-                    <div className="text-xs text-muted-foreground text-center py-2">
-                      No private workspaces
-                    </div>
-                  ) : (
-                    privateWorkspaces.map((ws) => (
-                      <button
-                        key={ws.id}
-                        onClick={() => router.push(getWorkspacePath(ws.id))}
-                        className={cn(
-                          "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors cursor-pointer",
-                          selectedWorkspace === ws.id
-                            ? "bg-muted/50 text-foreground font-medium"
-                            : "text-muted-foreground hover:bg-muted/30 hover:text-foreground",
-                        )}
-                      >
-                        {ws.logo ? (
-                          <img
-                            src={ws.logo}
-                            alt=""
-                            className="size-4 rounded-full object-cover shrink-0"
-                          />
-                        ) : (
-                          <div className="size-4 rounded-full bg-amber-400 flex items-center justify-center text-[10px] font-bold text-amber-950 shrink-0">
-                            {ws.title.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <span>{ws.title}</span>
+          {/* ── Workspaces ── */}
+          <SidebarGroup className="px-2 py-2 flex-1">
+            <SidebarGroupContent>
+              <div className={cn(
+                "rounded-lg bg-sidebar-accent/50 p-1.5 space-y-3",
+                isCollapsed && "bg-transparent p-0 space-y-1",
+              )}>
+                {/* Private */}
+                <Collapsible open={privateExpanded} onOpenChange={setPrivateExpanded}>
+                  {!isCollapsed && (
+                    <CollapsibleTrigger asChild>
+                      <button className="flex items-center justify-between w-full px-1.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors">
+                        <span>Private</span>
+                        {privateExpanded ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
                       </button>
-                    ))
+                    </CollapsibleTrigger>
                   )}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
+                  <CollapsibleContent>
+                    <SidebarMenu className="gap-1">
+                      {isLoading ? (
+                        <div className="flex justify-center py-3">
+                          <Spinner className="size-4" />
+                        </div>
+                      ) : privateWorkspaces.length === 0 ? (
+                        !isCollapsed && (
+                          <p className="px-2 py-1.5 text-xs text-muted-foreground text-center">
+                            No private workspaces
+                          </p>
+                        )
+                      ) : (
+                        privateWorkspaces.map((ws) => (
+                          <SidebarMenuItem key={ws.id}>
+                            <SidebarMenuButton
+                              tooltip={ws.title}
+                              isActive={selectedWorkspace === ws.id}
+                              onClick={() => router.push(getWorkspacePath(ws.id))}
+                              className={selectedWorkspace === ws.id ? "border-r-2 border-r-primary bg-green-100! hover:bg-green-100! transition-colors" : "hover:bg-red-100! transition-colors"}
+                            >
+                              {ws.logo ? (
+                                <img src={ws.logo} alt="" className="size-4 rounded-full object-cover shrink-0" />
+                              ) : (
+                                <div className="size-4 rounded-full bg-amber-400 flex items-center justify-center text-[9px] font-bold text-amber-950 shrink-0">
+                                  {ws.title.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <span className="truncate">{ws.title}</span>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        ))
+                      )}
+                    </SidebarMenu>
+                  </CollapsibleContent>
+                </Collapsible>
 
-          {/* Shared Section */}
-          {!isLoading && sharedWorkspaces.length > 0 && (
-            <div className="mt-4">
-              <Collapsible open={sharedExpanded} onOpenChange={setSharedExpanded}>
-                <CollapsibleTrigger asChild>
-                  <button className="flex items-center justify-between w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-1 px-1 cursor-pointer">
-                    <span>Public</span>
-                    {sharedExpanded ? (
-                      <ChevronUp className="size-3" />
-                    ) : (
-                      <ChevronDown className="size-3" />
+                {/* Public */}
+                {!isLoading && sharedWorkspaces.length > 0 && <div className="h-px bg-sidebar-border mx-1" />}
+                {!isLoading && sharedWorkspaces.length > 0 && (
+                  <Collapsible open={sharedExpanded} onOpenChange={setSharedExpanded}>
+                    {!isCollapsed && (
+                      <CollapsibleTrigger asChild>
+                        <button className="flex items-center justify-between w-full px-1.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors">
+                          <span>Public</span>
+                          {sharedExpanded ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+                        </button>
+                      </CollapsibleTrigger>
                     )}
-                  </button>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="space-y-0.5">
-                    {sharedWorkspaces.map((ws) => (
-                      <button
-                        key={ws.id}
-                        onClick={() => router.push(getWorkspacePath(ws.id))}
-                        className={cn(
-                          "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors cursor-pointer",
-                          selectedWorkspace === ws.id
-                            ? "bg-muted/50 text-foreground font-medium"
-                            : "text-muted-foreground hover:bg-muted/30 hover:text-foreground",
-                        )}
-                      >
-                        {ws.logo ? (
-                          <img
-                            src={ws.logo}
-                            alt=""
-                            className="size-4 rounded-full object-cover shrink-0"
-                          />
-                        ) : (
-                          <div className="size-4 rounded-full bg-amber-100 flex items-center justify-center text-[10px] font-bold text-amber-950 shrink-0">
-                            {ws.title.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <span>{ws.title}</span>
-                      </button>
-                    ))}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
-          )}
-        </div>
-      </ScrollArea>
+                    <CollapsibleContent>
+                      <SidebarMenu className="gap-1">
+                        {sharedWorkspaces.map((ws) => (
+                          <SidebarMenuItem key={ws.id}>
+                            <SidebarMenuButton
+                              tooltip={ws.title}
+                              isActive={selectedWorkspace === ws.id}
+                              onClick={() => router.push(getWorkspacePath(ws.id))}
+                              className={selectedWorkspace === ws.id ? "border-r-2 border-r-primary bg-green-100! hover:bg-green-100! transition-colors" : ws.isPersonal ? "hover:bg-red-100! transition-colors" : "hover:bg-green-100! transition-colors"}
+                            >
+                              {ws.logo ? (
+                                <img src={ws.logo} alt="" className="size-4 rounded-full object-cover shrink-0" />
+                              ) : (
+                                <div className="size-4 rounded-full bg-amber-100 flex items-center justify-center text-[9px] font-bold text-amber-950 shrink-0">
+                                  {ws.title.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <span className="truncate">{ws.title}</span>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        ))}
+                      </SidebarMenu>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
 
-      {/* Bottom: User Section */}
-      <div className="mt-auto border-t border-border p-2 space-y-0.5">
-        <Link
-          href="/profile"
-          className="flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-muted/40 transition-colors w-full"
-        >
-          <Avatar className="size-6 shrink-0 border border-primary/30">
-            <AvatarImage src={user?.image || undefined} alt={user?.name || "User"} />
-            <AvatarFallback className="bg-primary text-primary-foreground text-[10px] font-semibold">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <span className="text-xs font-medium text-muted-foreground">Profile</span>
-        </Link>
+          <SidebarSeparator />
 
-        <button
-          onClick={() => setSignOutOpen(true)}
-          className="flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-destructive/8 transition-colors w-full text-muted-foreground hover:text-destructive"
-        >
-          <LogOut className="size-3.5 shrink-0" />
-          <span className="text-xs font-medium">Sign out</span>
-        </button>
-      </div>
+          {/* ── View Plans ── */}
+          <SidebarGroup className="px-2 py-2">
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    tooltip={planButton.label}
+                    onClick={() => setPlansOpen(true)}
+                    className={planButton.className}
+                  >
+                    <PlanIcon />
+                    <span>{planButton.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
 
+        {/* ── Footer: Profile + Sign out ── */}
+        <SidebarFooter className="border-t border-sidebar-border px-2 py-2">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton tooltip="Profile" onClick={() => router.push("/profile")}>
+                <Avatar className="size-5 shrink-0 border border-primary/30">
+                  <AvatarImage src={user?.image || undefined} alt={user?.name || "User"} />
+                  <AvatarFallback className="bg-primary text-primary-foreground text-[9px] font-semibold">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="font-medium">{user?.name || "Profile"}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip="Sign out"
+                onClick={() => setSignOutOpen(true)}
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/8"
+              >
+                <LogOut />
+                <span>Sign out</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      </Sidebar>
+
+      {/* Modals */}
+      <WorkspaceSettingsModal
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        workspace={currentWorkspace ? {
+          id: currentWorkspace.id,
+          title: currentWorkspace.title,
+          logo: currentWorkspace.logo,
+          isPersonal: currentWorkspace.isPersonal,
+          myRole: currentWorkspace.myRole,
+        } : undefined}
+      />
       <SignOutModal isOpen={signOutOpen} onClose={() => setSignOutOpen(false)} />
-    </aside>
+      <PlansModal open={plansOpen} onOpenChange={setPlansOpen} currentPlanId={planId} />
+    </>
   );
 }

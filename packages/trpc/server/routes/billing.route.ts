@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router } from "../trpc";
+import { router, publicProcedure } from "../trpc";
 import { workspaceProcedure, permissionProcedure } from "../middlewares/workspace.middleware";
 import { billingService, workspaceCoreService } from "../services";
 import {
@@ -8,6 +8,7 @@ import {
   WorkspacePlanOutputSchema,
   RemainingQuotaOutputSchema,
   FormUsageOutputSchema,
+  PlanCatalogOutputSchema,
 } from "@flowform/services/billing";
 import { generatePath } from "../utils/path-generator";
 
@@ -15,21 +16,24 @@ const TAGS = ["Billing"];
 const getPath = generatePath("/workspaces/:workspaceId/billing");
 
 export const billingRouter = router({
+  getPlans: publicProcedure
+    .meta({ openapi: { method: "GET", path: "/billing/plans", tags: TAGS } })
+    .input(z.object({}))
+    .output(PlanCatalogOutputSchema)
+    .query(() => billingService.getPlans()),
+
   getWorkspacePlan: workspaceProcedure
     .meta({ openapi: { method: "GET", path: getPath("/plan"), tags: TAGS } })
-    .input(z.object({}))
     .output(WorkspacePlanOutputSchema)
     .query(({ ctx }) => billingService.getWorkspacePlan(ctx.workspaceId)),
 
   getRemainingQuota: workspaceProcedure
     .meta({ openapi: { method: "GET", path: getPath("/quota"), tags: TAGS } })
-    .input(z.object({}))
     .output(RemainingQuotaOutputSchema)
     .query(({ ctx }) => billingService.getRemainingQuota(ctx.workspaceId)),
 
   getFormUsage: workspaceProcedure
     .meta({ openapi: { method: "GET", path: getPath("/form-usage"), tags: TAGS } })
-    .input(z.object({}))
     .output(FormUsageOutputSchema)
     .query(({ ctx }) => billingService.getFormUsage(ctx.workspaceId)),
 

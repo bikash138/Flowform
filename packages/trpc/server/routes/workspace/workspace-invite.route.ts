@@ -38,7 +38,6 @@ export const workspaceInvitesRouter = router({
         tags: TAGS,
       },
     })
-    .input(z.object({}))
     .output(z.array(InviteSummarySchema))
     .query(({ ctx }) => workspaceInviteService.listInvites(ctx.workspaceId)),
 

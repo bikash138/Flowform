@@ -35,7 +35,6 @@ export const workspaceCoreRouter = router({
     .meta({
       openapi: { method: "GET", path: getPath("/:workspaceId"), tags: TAGS },
     })
-    .input(z.object({}))
     .output(WorkspaceSummarySchema)
     .query(({ ctx }) =>
       workspaceCoreService.getWorksapaceById(ctx.workspaceId, ctx.role),
@@ -55,7 +54,6 @@ export const workspaceCoreRouter = router({
     .meta({
       openapi: { method: "DELETE", path: getPath("/:workspaceId"), tags: TAGS },
     })
-    .input(z.object({}))
     .output(z.object({ success: z.literal(true) }))
     .mutation(async ({ ctx }) => {
       await workspaceCoreService.deleteWorkpace(ctx.workspaceId);

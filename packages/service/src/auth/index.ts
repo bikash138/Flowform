@@ -88,7 +88,7 @@ function createAuth() {
 
           if (result?.user && !result.user.personalWorkspaceId) {
             const workspaceService = new WorkspaceCoreService();
-            const workspace = await workspaceService.createPersonal(
+            const workspace = await workspaceService.createPersonalWorkspace(
               result.user.id,
               result.user.name,
             );

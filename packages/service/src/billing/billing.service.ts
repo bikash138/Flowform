@@ -4,12 +4,14 @@ import { CacheService } from "@flowform/redis";
 import type { Tx } from "@flowform/database/connection";
 import { CacheKeys, TTL } from "../cache";
 import { BillingRepository } from "./billing.repo";
+import { PLANS } from "./plans.data";
 import type {
   ActivatePlanInput,
   WorkspacePlanOutput,
   RemainingQuotaOutput,
   FormUsageOutput,
 } from "./billing.schema";
+import type { PlanData } from "./plans.data";
 
 const log = createLogger("billing-service");
 
@@ -23,6 +25,10 @@ function getCurrentYearMonth(): string {
 export class BillingService {
   private readonly repo = new BillingRepository();
   private readonly cache = new CacheService();
+
+  getPlans(): PlanData[] {
+    return [...PLANS];
+  }
 
   // Returns the plan + features for a workspace.
   async getWorkspacePlan(workspaceId: string): Promise<WorkspacePlanOutput> {
