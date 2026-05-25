@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Users } from "lucide-react";
+import { Users, Lock } from "lucide-react";
 import { useGetWorkspaceMembers } from "@/hooks/user/use-workspace-member";
 import { useWorkspacePlan } from "@/hooks/user/use-billing";
 import { ActiveMembersTab } from "@/components/user/workspace/core/active-members-tab";
@@ -13,9 +13,10 @@ import { InviteMemberTab } from "@/components/user/workspace/core/invite-member-
 interface MemberSettingsTabProps {
   workspaceId: string;
   isOwner?: boolean;
+  isPrivate?: boolean;
 }
 
-export function MemberSettingsTab({ workspaceId, isOwner }: MemberSettingsTabProps) {
+export function MemberSettingsTab({ workspaceId, isOwner, isPrivate }: MemberSettingsTabProps) {
   const { data: members = [], isLoading: membersLoading } = useGetWorkspaceMembers(workspaceId);
   const { data: plan } = useWorkspacePlan(workspaceId);
 
@@ -66,7 +67,8 @@ export function MemberSettingsTab({ workspaceId, isOwner }: MemberSettingsTabPro
               Pending / Expired
             </TabsTrigger>
             {isOwner && (
-              <TabsTrigger value="invite" className="text-xs h-7 px-4">
+              <TabsTrigger value="invite" className="text-xs h-7 px-4 gap-1.5">
+                {isPrivate && <Lock className="size-3" />}
                 Invite
               </TabsTrigger>
             )}
@@ -83,7 +85,21 @@ export function MemberSettingsTab({ workspaceId, isOwner }: MemberSettingsTabPro
 
         {isOwner && (
           <TabsContent value="invite" className="m-0 focus-visible:outline-none">
-            <InviteMemberTab workspaceId={workspaceId} isLimitReached={isLimitReached} />
+            {isPrivate ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3 text-center px-8">
+                <div className="flex items-center justify-center size-10 rounded-full bg-muted shrink-0">
+                  <Lock className="size-5 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground mb-1">Invites unavailable</p>
+                  <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
+                    Invites can only be sent for public workspaces. Make this workspace public to enable member invitations.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <InviteMemberTab workspaceId={workspaceId} isLimitReached={isLimitReached} />
+            )}
           </TabsContent>
         )}
       </Tabs>

@@ -31,14 +31,14 @@ const LAYOUT_OPTIONS: LayoutOption[] = [
   {
     value: "vertical",
     icon: AlignJustify,
-    label: "List",
-    description: "Multiple questions per page, scrollable",
+    label: "Vertical",
+    description: "All questions on one page — clean, familiar, and easy to scroll through.",
   },
   {
     value: "conversational",
     icon: Columns2,
-    label: "Card",
-    description: "One question + image per page, auto-advance",
+    label: "Conversational",
+    description: "One question at a time, full-screen — feels like a natural conversation.",
   },
 ];
 

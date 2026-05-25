@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { router } from "../../trpc";
-import { protectedProcedure } from "../../middlewares/auth.middleware";
+import { TRPCError } from "@trpc/server";
+import { router, publicProcedure } from "../../trpc";
 import { permissionProcedure } from "../../middlewares/workspace.middleware";
 import { workspaceInviteService } from "../../services";
 import {
@@ -56,13 +56,19 @@ export const workspaceInvitesRouter = router({
       return { success: true as const };
     }),
 
-  acceptInvite: protectedProcedure
+  acceptInvite: publicProcedure
     .meta({ openapi: { method: "POST", path: "/invites/accept", tags: TAGS } })
     .input(AcceptInviteInputSchema)
     .output(z.object({ workspaceId: z.string() }))
-    .mutation(({ input, ctx }) =>
-      workspaceInviteService.acceptInvite(input.token, ctx.userId),
-    ),
+    .mutation(({ input, ctx }) => {
+      if (!ctx.userId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be signed in to accept an invite.",
+        });
+      }
+      return workspaceInviteService.acceptInvite(input.token, ctx.userId);
+    }),
 
   resendInvite: permissionProcedure("member:invite")
     .meta({
@@ -83,7 +89,7 @@ export const workspaceInvitesRouter = router({
       return { success: true as const };
     }),
 
-  validateInviteToken: protectedProcedure
+  validateInviteToken: publicProcedure
     .meta({
       openapi: { method: "GET", path: "/invites/validate", tags: TAGS },
     })

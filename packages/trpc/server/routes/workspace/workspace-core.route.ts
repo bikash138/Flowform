@@ -11,6 +11,7 @@ import {
   UpdateWorkspaceInputSchema,
   WorkspaceSummarySchema,
 } from "@flowform/services";
+import { generateUploadUrl } from "@flowform/services/s3";
 import { generatePath } from "../../utils/path-generator";
 
 const TAGS = ["Workspaces"];
@@ -49,6 +50,13 @@ export const workspaceCoreRouter = router({
     .mutation(({ input, ctx }) =>
       workspaceCoreService.updateWorksapce(ctx.workspaceId, input, ctx.role),
     ),
+
+  getLogoUploadUrl: permissionProcedure("workspace:update")
+    .meta({
+      openapi: { method: "POST", path: getPath("/:workspaceId/logo-upload-url"), tags: TAGS },
+    })
+    .output(z.object({ uploadUrl: z.string(), publicUrl: z.string(), key: z.string() }))
+    .mutation(({ ctx }) => generateUploadUrl(ctx.workspaceId, "brand")),
 
   deleteWorkspace: permissionProcedure("workspace:delete")
     .meta({

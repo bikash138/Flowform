@@ -45,7 +45,7 @@ export const useUpdateWorkspace = () => {
 
   return useMutation({
     ...trpc.workspace.core.updateWorkspace.mutationOptions(),
-    onSuccess: (data, variables, context) => {
+    onSuccess: (_data, variables) => {
       toast.success("Workspace updated successfully");
       queryClient.invalidateQueries({
         queryKey: trpc.workspace.core.getUserWorkspaces.queryKey(),
@@ -64,13 +64,18 @@ export const useUpdateWorkspace = () => {
   });
 };
 
+export const useGetLogoUploadUrl = () => {
+  const trpc = useTRPC();
+  return useMutation(trpc.workspace.core.getLogoUploadUrl.mutationOptions());
+};
+
 export const useDeleteWorkspace = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
   return useMutation({
     ...trpc.workspace.core.deleteWorkspace.mutationOptions(),
-    onSuccess: (data, variables, context) => {
+    onSuccess: () => {
       toast.success("Workspace deleted successfully");
       queryClient.invalidateQueries({
         queryKey: trpc.workspace.core.getUserWorkspaces.queryKey(),

@@ -33,7 +33,7 @@ export const WorkspacePlanOutputSchema = z.object({
   planName: z.string(),
   status: z.enum(WorkspacePlanStatus),
   features: PlanFeaturesSchema,
-  currentPeriodEnd: z.date().nullable(),
+  currentPeriodEnd: z.coerce.date().nullable(),
   cancelAtPeriodEnd: z.boolean(),
   formCount: z.number(),
   teamMemberCount: z.number(),

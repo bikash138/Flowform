@@ -2,8 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/utils/trpc";
 import { toast } from "sonner";
 
-const PLAN_STALE_TIME = 1000 * 60 * 10; // 10 minutes
-
 export const usePlans = () => {
   const trpc = useTRPC();
   return useQuery({
@@ -16,7 +14,6 @@ export const useWorkspacePlan = (workspaceId: string) => {
   const trpc = useTRPC();
   return useQuery({
     ...trpc.billing.getWorkspacePlan.queryOptions({ workspaceId }),
-    staleTime: PLAN_STALE_TIME,
     enabled: !!workspaceId,
   });
 };
@@ -45,8 +42,17 @@ export const useActivatePlan = (workspaceId: string) => {
     ...trpc.billing.activatePlan.mutationOptions(),
     onSuccess: (data) => {
       toast.success(`${data.planName} plan activated`);
+      // Immediately write the new plan into the cache so all observers update without waiting for a refetch
+      queryClient.setQueryData(
+        trpc.billing.getWorkspacePlan.queryKey({ workspaceId }),
+        data,
+      );
+      // Then invalidate to schedule a background refetch
       queryClient.invalidateQueries({
         queryKey: trpc.billing.getWorkspacePlan.queryKey({ workspaceId }),
+      });
+      queryClient.invalidateQueries({
+        queryKey: trpc.billing.getRemainingQuota.queryKey({ workspaceId }),
       });
     },
     onError: (error) => {

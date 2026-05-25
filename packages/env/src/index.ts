@@ -19,6 +19,11 @@ const serverSchema = z.object({
   GITHUB_CLIENT_ID: z.string().optional(),
   GITHUB_CLIENT_SECRET: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
+  AWS_REGION: z.string(),
+  AWS_ENDPOINT_URL_S3: z.string(),
+  AWS_ACCESS_KEY_ID: z.string(),
+  AWS_SECRET_ACCESS_KEY: z.string(),
+  S3_BUCKET_NAME: z.string(),
 });
 
 export const serverEnvSchema = serverSchema.transform((e) => ({
@@ -49,6 +54,13 @@ export const serverEnvSchema = serverSchema.transform((e) => ({
     },
   },
   email: { resend: e.RESEND_API_KEY },
+  s3: {
+    region: e.AWS_REGION,
+    endpoint: e.AWS_ENDPOINT_URL_S3,
+    accessKeyId: e.AWS_ACCESS_KEY_ID,
+    secretAccessKey: e.AWS_SECRET_ACCESS_KEY,
+    bucketName: e.S3_BUCKET_NAME,
+  },
 }));
 
 const parsed = serverEnvSchema.safeParse(process.env);

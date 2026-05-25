@@ -50,7 +50,7 @@ export default function InvitePage({
       { token },
       {
         onSuccess: (data) => {
-          router.push(`/workspace/${data.workspaceId}`);
+          router.push(`/ws/${data.workspaceId}`);
         },
       },
     );

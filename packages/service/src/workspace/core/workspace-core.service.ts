@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { createLogger } from "@flowform/logger";
 import { Role } from "@flowform/database/constants";
 import type { WorkspaceRecord } from "@flowform/database/models";
+import { CacheService } from "@flowform/redis";
 import { WorkspaceCoreRepository } from "./workspace-core.repo";
 import type {
   CreateWorkspaceInput,
@@ -9,12 +10,14 @@ import type {
   WorkspaceSummary,
 } from "./workspace-core.schema";
 import { BillingService } from "../../billing";
+import { CacheKeys } from "../../cache";
 
 const log = createLogger("workspace-core-service");
 
 export default class WorkspaceCoreService {
   private readonly repo = new WorkspaceCoreRepository();
   private readonly billingService = new BillingService();
+  private readonly cache = new CacheService();
 
   private toSummary(doc: WorkspaceRecord, myRole: Role): WorkspaceSummary {
     return {
@@ -131,5 +134,6 @@ export default class WorkspaceCoreService {
 
     log.info({ workspaceId }, "Deleting workspace");
     await this.repo.deleteById(workspaceId);
+    await this.cache.del(CacheKeys.billing.workspacePlan(workspaceId));
   }
 }

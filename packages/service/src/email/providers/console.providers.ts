@@ -8,7 +8,7 @@ export class ConsoleEmailProvider implements IEmailProvider {
   }
 
   async sendWorkspaceInvite(params: InviteEmailParams): Promise<void> {
-    const inviteLink = `${this.frontendUrl}/invites/accept?token=${params.rawToken}`;
+    const inviteLink = `${this.frontendUrl}/invite/${params.rawToken}`;
     console.log("=========================================");
     console.log(`[EMAIL MOCK] To: ${params.toEmail}`);
     console.log(

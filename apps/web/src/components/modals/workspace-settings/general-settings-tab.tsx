@@ -4,8 +4,33 @@ import React from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useUpdateWorkspace } from "@/hooks/user/use-workspace-core";
-import { BrandingSelector } from "@/components/user/common/branding-selector";
+import { ImageUploader } from "@/components/common/image-uploader";
+import { useUpdateWorkspace, useGetLogoUploadUrl } from "@/hooks/user/use-workspace-core";
+import { toast } from "sonner";
+
+async function convertToWebp(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const blobUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext("2d")?.drawImage(img, 0, 0);
+      URL.revokeObjectURL(blobUrl);
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error("webp conversion failed"))),
+        "image/webp",
+        0.9,
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(blobUrl);
+      reject(new Error("Failed to load image"));
+    };
+    img.src = blobUrl;
+  });
+}
 
 interface GeneralSettingsTabProps {
   workspace?: {
@@ -16,36 +41,75 @@ interface GeneralSettingsTabProps {
   onDeleteClick: () => void;
 }
 
-export function GeneralSettingsTab({
-  workspace,
-  onDeleteClick,
-}: GeneralSettingsTabProps) {
-  const [title, setTitle] = React.useState(workspace?.title || "");
-
-  const [logoFile, setLogoFile] = React.useState<File | null>(null);
-  const [previewLogo, setPreviewLogo] = React.useState(workspace?.logo || "");
-  const [urlValue, setUrlValue] = React.useState(workspace?.logo || "");
+export function GeneralSettingsTab({ workspace, onDeleteClick }: GeneralSettingsTabProps) {
+  const [title, setTitle] = React.useState(workspace?.title ?? "");
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
 
   const updateWorkspace = useUpdateWorkspace();
+  const getLogoUploadUrl = useGetLogoUploadUrl();
+
+  const [isSaving, setIsSaving] = React.useState(false);
+  const isBusy = isSaving || updateWorkspace.isPending || getLogoUploadUrl.isPending;
 
   React.useEffect(() => {
-    if (workspace?.title) {
-      setTitle(workspace.title);
-    }
+    if (workspace?.title) setTitle(workspace.title);
   }, [workspace?.title]);
 
-  const handleUpdate = () => {
-    if (!workspace || (!title.trim() && !previewLogo)) return;
-    updateWorkspace.mutate({
-      workspaceId: workspace.id,
-      title: title.trim(),
-      logo: previewLogo?.trim() ? previewLogo : undefined,
-    });
-  };
-
   const hasChanges =
-    title.trim() !== workspace?.title ||
-    previewLogo !== (workspace?.logo || "");
+    title.trim() !== (workspace?.title ?? "") || selectedFile !== null;
+
+  const handleSave = async () => {
+    if (!workspace) return;
+    setIsSaving(true);
+
+    let logoUrl: string | undefined = workspace.logo ?? undefined;
+
+    try {
+      if (selectedFile) {
+        // 1. Get presigned URL
+        const { uploadUrl, publicUrl } = await new Promise<{ uploadUrl: string; publicUrl: string }>(
+          (resolve, reject) =>
+            getLogoUploadUrl.mutate(
+              { workspaceId: workspace.id },
+              { onSuccess: resolve, onError: reject },
+            ),
+        );
+
+        // 2. Convert to webp
+        let webpBlob: Blob;
+        try {
+          webpBlob = await convertToWebp(selectedFile);
+        } catch {
+          toast.error("Failed to process image.");
+          return;
+        }
+
+        // 3. Upload directly to S3
+        const uploadRes = await fetch(uploadUrl, {
+          method: "PUT",
+          body: webpBlob,
+          headers: { "Content-Type": "image/webp" },
+        });
+
+        if (!uploadRes.ok) {
+          toast.error("Upload failed. Please try again.");
+          return;
+        }
+
+        logoUrl = publicUrl;
+        setSelectedFile(null);
+      }
+
+      // 4. Update workspace in DB
+      updateWorkspace.mutate({
+        workspaceId: workspace.id,
+        title: title.trim(),
+        ...(logoUrl ? { logo: logoUrl } : {}),
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -55,30 +119,12 @@ export function GeneralSettingsTab({
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             Workspace Logo
           </label>
-          <BrandingSelector
-            compact
-            previewLogo={previewLogo}
-            urlValue={urlValue}
-            fallbackText={(workspace?.title || "W").charAt(0).toUpperCase()}
-            onLogoChange={(url, file) => {
-              if (previewLogo && previewLogo.startsWith("blob:")) {
-                URL.revokeObjectURL(previewLogo);
-              }
-              setLogoFile(file);
-              setPreviewLogo(url);
-            }}
-            onUrlChange={(url) => {
-              setUrlValue(url);
-              setPreviewLogo(url);
-            }}
-            onRemove={() => {
-              if (previewLogo && previewLogo.startsWith("blob:")) {
-                URL.revokeObjectURL(previewLogo);
-              }
-              setPreviewLogo("");
-              setLogoFile(null);
-              setUrlValue("");
-            }}
+          <ImageUploader
+            value={workspace?.logo}
+            selectedFile={selectedFile}
+            fallbackLetter={workspace?.title ?? "W"}
+            disabled={isBusy}
+            onFileSelect={setSelectedFile}
           />
         </div>
 
@@ -94,16 +140,13 @@ export function GeneralSettingsTab({
               className="h-9 text-sm bg-background border-border"
               placeholder="Enter workspace title"
             />
-
             <Button
               size="sm"
               className="h-9 px-6 text-sm shrink-0 font-semibold"
-              onClick={handleUpdate}
-              disabled={
-                updateWorkspace.isPending || !title.trim() || !hasChanges
-              }
+              onClick={handleSave}
+              disabled={isBusy || !title.trim() || !hasChanges}
             >
-              {updateWorkspace.isPending ? "Saving..." : "Save"}
+              {isBusy ? "Saving..." : "Save"}
             </Button>
           </div>
         </div>
@@ -116,12 +159,9 @@ export function GeneralSettingsTab({
         </label>
         <div className="flex items-center justify-between rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 gap-4">
           <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium text-foreground">
-              Delete workspace
-            </span>
+            <span className="text-sm font-medium text-foreground">Delete workspace</span>
             <span className="text-xs text-muted-foreground">
-              Permanently delete this workspace and all its forms. This action
-              cannot be undone.
+              Permanently delete this workspace and all its forms. This action cannot be undone.
             </span>
           </div>
           <Button

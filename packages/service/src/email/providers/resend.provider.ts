@@ -12,7 +12,7 @@ export class ResendEmailProvider implements IEmailProvider {
   }
 
   async sendWorkspaceInvite(params: InviteEmailParams): Promise<void> {
-    const inviteLink = `${this.frontendUrl}/invites/accept?token=${params.rawToken}`;
+    const inviteLink = `${this.frontendUrl}/invite/${params.rawToken}`;
 
     const htmlContent = await renderInvitationEmail({
       inviteLink,

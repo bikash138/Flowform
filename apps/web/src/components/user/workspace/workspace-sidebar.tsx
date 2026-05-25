@@ -45,6 +45,7 @@ import { CreateFormModal } from "@/components/modals/create-form-modal";
 import { WorkspaceSettingsModal } from "@/components/modals/workspace-settings/workspace-settings-modal";
 import { SignOutModal } from "@/components/modals/sign-out-modal";
 import { PlansModal } from "@/components/modals/plans-modal";
+import { ProfileModal } from "@/components/modals/profile-modal";
 
 export function WorkspaceSidebar() {
   const router = useRouter();
@@ -62,6 +63,7 @@ export function WorkspaceSidebar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [plansOpen, setPlansOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const { data: workspaces = [], isLoading } = useWorkspaces();
   const { data: currentWorkspace } = useWorkspace(selectedWorkspace);
@@ -88,10 +90,10 @@ export function WorkspaceSidebar() {
   };
 
   const planButton = {
-    FREE:    { label: "View Plans",   icon: Sparkles,       className: "bg-foreground text-background hover:bg-foreground/90" },
-    PRO:     { label: "Upgrade",      icon: ArrowUpCircle,  className: "bg-foreground text-background hover:bg-foreground/90" },
-    PRO_MAX: { label: "See Features", icon: Crown,          className: "bg-foreground text-background hover:bg-foreground/90" },
-  }[planId] ?? { label: "View Plans", icon: Sparkles, className: "bg-foreground text-background hover:bg-foreground/90" };
+    FREE:    { label: "View Plans",   icon: Sparkles,       className: "bg-foreground/75 text-background hover:bg-foreground hover:text-background tracking-wider [font-family:var(--font-open-sans)] transition-colors duration-200" },
+    PRO:     { label: "Upgrade",      icon: ArrowUpCircle,  className: "bg-foreground/75 text-background hover:bg-foreground hover:text-background tracking-wider [font-family:var(--font-open-sans)] transition-colors duration-200" },
+    PRO_MAX: { label: "See Features", icon: Crown,          className: "bg-foreground/75 text-background hover:bg-foreground hover:text-background tracking-wider [font-family:var(--font-open-sans)] transition-colors duration-200" },
+  }[planId] ?? { label: "View Plans", icon: Sparkles, className: "bg-foreground/75 text-background hover:bg-foreground hover:text-background tracking-wider [font-family:var(--font-open-sans)] transition-colors duration-200" };
 
   const PlanIcon = planButton.icon;
 
@@ -209,7 +211,7 @@ export function WorkspaceSidebar() {
                               tooltip={ws.title}
                               isActive={selectedWorkspace === ws.id}
                               onClick={() => router.push(getWorkspacePath(ws.id))}
-                              className={selectedWorkspace === ws.id ? "border-r-2 border-r-primary bg-green-100! hover:bg-green-100! transition-colors" : "hover:bg-red-100! transition-colors"}
+                              className={selectedWorkspace === ws.id ? "border-r-2 border-r-red-500 bg-red-200! hover:bg-red-200! transition-colors" : "hover:bg-red-100! transition-colors"}
                             >
                               {ws.logo ? (
                                 <img src={ws.logo} alt="" className="size-4 rounded-full object-cover shrink-0" />
@@ -247,7 +249,9 @@ export function WorkspaceSidebar() {
                               tooltip={ws.title}
                               isActive={selectedWorkspace === ws.id}
                               onClick={() => router.push(getWorkspacePath(ws.id))}
-                              className={selectedWorkspace === ws.id ? "border-r-2 border-r-primary bg-green-100! hover:bg-green-100! transition-colors" : ws.isPersonal ? "hover:bg-red-100! transition-colors" : "hover:bg-green-100! transition-colors"}
+                              className={selectedWorkspace === ws.id
+                                ? (ws.isPersonal ? "border-r-2 border-r-red-500 bg-red-200! hover:bg-red-200! transition-colors" : "border-r-2 border-r-green-600 bg-green-200! hover:bg-green-200! transition-colors")
+                                : (ws.isPersonal ? "hover:bg-red-100! transition-colors" : "hover:bg-green-100! transition-colors")}
                             >
                               {ws.logo ? (
                                 <img src={ws.logo} alt="" className="size-4 rounded-full object-cover shrink-0" />
@@ -293,7 +297,7 @@ export function WorkspaceSidebar() {
         <SidebarFooter className="border-t border-sidebar-border px-2 py-2">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Profile" onClick={() => router.push("/profile")}>
+              <SidebarMenuButton tooltip="Profile" onClick={() => setProfileOpen(true)}>
                 <Avatar className="size-5 shrink-0 border border-primary/30">
                   <AvatarImage src={user?.image || undefined} alt={user?.name || "User"} />
                   <AvatarFallback className="bg-primary text-primary-foreground text-[9px] font-semibold">
@@ -327,11 +331,13 @@ export function WorkspaceSidebar() {
           title: currentWorkspace.title,
           logo: currentWorkspace.logo,
           isPersonal: currentWorkspace.isPersonal,
+          isPrivate: currentWorkspace.isPrivate,
           myRole: currentWorkspace.myRole,
         } : undefined}
       />
       <SignOutModal isOpen={signOutOpen} onClose={() => setSignOutOpen(false)} />
       <PlansModal open={plansOpen} onOpenChange={setPlansOpen} currentPlanId={planId} />
+      <ProfileModal open={profileOpen} onOpenChange={setProfileOpen} />
     </>
   );
 }

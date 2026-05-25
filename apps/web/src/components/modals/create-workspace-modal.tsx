@@ -36,7 +36,7 @@ export function CreateWorkspaceModal({
     {
       onSuccess: (workspaceId) => {
         handleOpenChange(false);
-        router.push(`/workspace/${workspaceId}`);
+        router.push(`/ws/${workspaceId}`);
       },
     },
   );

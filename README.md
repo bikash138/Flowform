@@ -1,159 +1,197 @@
-# Turborepo starter
+<div align="center">
 
-This Turborepo starter is maintained by the Turborepo core team.
+<img src=".github/logo.svg" alt="Flowform Logo" width="80" height="80" />
 
-## Using this example
+# Flowform
 
-Run the following command:
+### Build beautiful forms. Understand your audience. Grow faster.
 
-```sh
-npx create-turbo@latest
-```
+Flowform is a modern form builder that turns questions into conversations — helping you collect responses, analyze results, and make better decisions without any friction.
 
-## What's inside?
+---
 
-This Turborepo includes the following packages/apps:
+[✨ Features](#-features) · [🎨 Form Builder](#-form-builder) · [📊 Analytics](#-analytics) · [👥 Teams](#-teams) · [💎 Plans](#-plans)
 
-### Apps and Packages
+</div>
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+---
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## Why Flowform?
 
-### Utilities
+Most form tools feel like filling out tax documents. Flowform is different.
 
-This Turborepo has some additional tools already setup for you:
+Whether you're running a survey, collecting feedback, onboarding new users, or running a quiz — Flowform makes the experience feel natural for your respondents, and the insights feel immediate for you. Two powerful layouts, beautiful themes, real-time analytics, and team collaboration — all in one place.
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+---
 
-### Build
+## ✨ Features
 
-To build all apps and packages, run the following command:
+### 🎨 Form Builder
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Build exactly the form you have in mind — no compromise.
 
-```sh
-cd my-turborepo
-turbo build
-```
+**Two distinct form experiences:**
 
-Without global `turbo`, use your package manager:
+| Layout | Best for |
+|---|---|
+| **Vertical / List** | Long surveys, detailed questionnaires, multi-section forms |
+| **Conversational / Card** | Lead gen, onboarding flows, quizzes, anything that feels like a chat |
 
-```sh
-cd my-turborepo
-npx turbo build
-pnpm dlx turbo build
-pnpm exec turbo build
-```
+**8 powerful field types:**
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+- **Short Text** — capture names, one-liners, free-form input
+- **Email** — built-in validation, no extra config needed
+- **Number** — set min/max ranges, collect scores or quantities
+- **Date** — date picker with optional time, perfect for scheduling
+- **Dropdown** — clean single-select from a list of options
+- **Multiple Choice** — radio-style visible options, great for quick picks
+- **Checkboxes** — let respondents pick everything that applies
+- **Rating** — star ratings with configurable scale (3–10 stars)
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+**Page structure:**
+- Customizable **Start Page** — set the tone with a heading, description, and call-to-action button
+- Customizable **End Page** — close strong with a thank-you message, animated celebration (confetti, fireworks, balloons), and an optional redirect button
+- **Multi-page support** — break long forms into digestible sections
 
-```sh
-turbo build --filter=docs
-```
+**Building experience:**
+- Drag-and-drop to reorder pages and questions instantly
+- Real-time **desktop & mobile preview** — see exactly what your respondents will see
+- Auto-saves as you type — never lose your work
+- Form outline sidebar for a bird's-eye view of your entire form
 
-Without global `turbo`:
+---
 
-```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+### 🖌️ Design & Themes
 
-### Develop
+Your form should look as good as your brand.
 
-To develop all apps and packages, run the following command:
+- Choose from a library of **pre-built themes** across all plans
+- Unlock **premium and exclusive themes** on higher plans
+- Full customization — colors, fonts, button shapes, input styles, and more
+- **Live theme preview** so you see changes before going live
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Customizable properties include: primary color, accent color, background, button radius (sharp / rounded / pill), font family, label colors, input borders, choice backgrounds, and star rating color.
 
-```sh
-cd my-turborepo
-turbo dev
-```
+---
 
-Without global `turbo`, use your package manager:
+### 📊 Analytics
 
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
-```
+Stop guessing. Start knowing.
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+Every form comes with a dedicated analytics dashboard that shows you:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+**Top-level metrics at a glance:**
+- Total views, starts, and submissions
+- Completion rate
+- Average time to complete
 
-```sh
-turbo dev --filter=web
-```
+**Question-level insights:**
+- Response distribution across all choice fields (dropdown, multiple choice, checkboxes)
+- Option-by-option percentage breakdown
+- Average ratings and star distribution for rating questions
 
-Without global `turbo`:
+**Audience insights:**
+- Response volume over time
+- Geographic data — top countries and cities your respondents come from
 
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
+**Multi-version tracking:**
+- Publish updates to your form without losing old data
+- Filter analytics by specific published versions
+- Compare how response patterns shift across versions
 
-### Remote Caching
+---
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+### 📬 Responses & Data
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+All your data, always within reach.
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+- View every submission in a clean, paginated response table
+- Filter by form version to isolate specific data sets
+- **Export to CSV** with a single click — formatted and ready for spreadsheets or further analysis
+- Optionally **collect respondent emails** for follow-up
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+---
 
-```sh
-cd my-turborepo
-turbo login
-```
+### ⚙️ Form Settings
 
-Without global `turbo`, use your package manager:
+Full control over how your form behaves.
 
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
+**Response controls:**
+- Set a response limit — automatically close the form when you've got enough
+- Set an expiry date — stop collecting after a specific date (Pro+)
+- Password-protect forms with an access code
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+**Completion behavior:**
+- Redirect respondents to any URL when they finish (Pro Max)
+- Send automatic confirmation emails to respondents (Pro Max) with custom subject and body
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+**Progress indicators:**
+- Show respondents how far they've come — choose between a progress bar, step count, or percentage
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+**Branding:**
+- Add your own logo and brand name to the form navbar (Pro+)
+- Remove the Flowform watermark entirely (Pro Max)
 
-```sh
-turbo link
-```
+**Localization:**
+- Serve your form in 6 languages — English, Spanish, French, German, Portuguese, and Hindi (Pro+)
+- Custom slug URLs instead of random IDs (Pro+)
 
-Without global `turbo`:
+---
 
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
+### 👥 Teams & Collaboration
 
-## Useful Links
+Build forms together, not in silos.
 
-Learn more about the power of Turborepo:
+- Invite teammates by email with a custom role
+- Three access levels: **Admin**, **Editor**, and **Viewer** — full control over who can do what
+- Share an invite link directly for quick onboarding
+- Track pending and active members from a central team page
 
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+---
+
+### 🔒 Security & Access
+
+Your data stays yours.
+
+- Email/password authentication
+- Optional access codes to gate form access
+- Public or private form visibility toggle
+- Role-based permissions across your workspace
+
+---
+
+## 💎 Plans
+
+Choose the plan that fits where you are right now.
+
+| | Free | Pro | Pro Max |
+|---|:---:|:---:|:---:|
+| Responses / month | 100 | 2,000 | 10,000 |
+| Active forms | 5 | 20 | 50 |
+| Team members | 1 | 10 | 30 |
+| Analytics | Basic | Advanced | Advanced |
+| Themes | Free | Free + Pro | Free + Pro + Pro Max |
+| Custom slug URLs | — | ✓ | ✓ |
+| Custom branding (logo + name) | — | ✓ | ✓ |
+| Multi-language forms | — | ✓ | ✓ |
+| Form close date | — | ✓ | ✓ |
+| Remove Flowform watermark | — | — | ✓ |
+| Redirect on completion | — | — | ✓ |
+| Email confirmations to respondents | — | — | ✓ |
+| **Price** | **Free** | **$10/mo** | **$25/mo** |
+
+---
+
+## 🗺️ What's Coming
+
+- **Polls** — quick, lightweight votes and opinion gathering for teams *(coming soon)*
+
+---
+
+<div align="center">
+
+Start for free. Upgrade when you're ready.
+
+**Flowform — forms that feel human.**
+
+</div>

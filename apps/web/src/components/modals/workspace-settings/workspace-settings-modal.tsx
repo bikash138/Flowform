@@ -34,6 +34,7 @@ interface WorkspaceSettingsModalProps {
     title: string;
     logo: string | null;
     isPersonal?: boolean;
+    isPrivate?: boolean;
     myRole?: string;
   };
 }
@@ -63,7 +64,7 @@ export function WorkspaceSettingsModal({
           setDeleteOpen(false);
           const { data: session } = await authClient.getSession();
           const personalWorkspaceId = session?.user.personalWorkspaceId;
-          router.push(personalWorkspaceId ? `/workspace/${personalWorkspaceId}` : "/workspace");
+          router.push(personalWorkspaceId ? `/ws/${personalWorkspaceId}` : "/");
         },
       },
     );
@@ -77,22 +78,20 @@ export function WorkspaceSettingsModal({
 
   const planBadgeClass =
     planId === "PRO_MAX"
-      ? "bg-foreground text-background"
+      ? "bg-red-100 text-red-700"
       : planId === "PRO"
-        ? "bg-primary/10 text-primary"
-        : "bg-muted text-muted-foreground";
+        ? "bg-blue-100 text-blue-700"
+        : "bg-green-100 text-green-700";
 
   return (
     <React.Fragment>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[780px] p-0 gap-0 overflow-hidden h-[520px] flex flex-col">
-          <DialogHeader className="px-6 pt-5 pb-4 border-b border-border shrink-0">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-base font-semibold">Workspace Settings</DialogTitle>
-              <span className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide", planBadgeClass)}>
-                {planLabel}
-              </span>
-            </div>
+          <DialogHeader className="px-6 pt-5 pb-4 border-b border-border shrink-0 gap-1">
+            <DialogTitle className="text-base font-semibold">Workspace Settings</DialogTitle>
+            <span className={cn("w-fit rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide", planBadgeClass)}>
+              {planLabel}
+            </span>
           </DialogHeader>
 
           <div className="flex flex-1 overflow-hidden">
@@ -128,7 +127,11 @@ export function WorkspaceSettingsModal({
                   </div>
                 )}
                 {activeTab === "members" && workspace && (
-                  <MemberSettingsTab workspaceId={workspace.id} isOwner={isOwner} />
+                  <MemberSettingsTab
+                    workspaceId={workspace.id}
+                    isOwner={isOwner}
+                    isPrivate={workspace.isPrivate ?? workspace.isPersonal ?? false}
+                  />
                 )}
               </div>
             </div>
