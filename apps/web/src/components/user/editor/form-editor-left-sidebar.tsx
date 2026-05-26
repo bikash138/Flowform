@@ -53,7 +53,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { FormSettings } from "@flowform/database";
+import type { FormSettings } from "@flowform/database/models";
 
 const TYPE_ICONS: Record<QuestionType, React.ReactNode> = {
   short_text: <Type className="size-3.5" />,

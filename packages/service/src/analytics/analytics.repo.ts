@@ -174,7 +174,7 @@ export class AnalyticsRepository {
           WHERE  jsonb_typeof(value) <> 'array'
         ) sub
       )
-      SELECT question_id, value_key, COUNT(*)::int AS count
+      SELECT question_id AS "questionId", value_key AS "valueKey", COUNT(*)::int AS count
       FROM   unnested
       GROUP  BY question_id, value_key
     `);

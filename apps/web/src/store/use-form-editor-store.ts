@@ -276,7 +276,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   addQuestion: (pageId, type) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         const page = state.content?.pages.find((p) => p.id === pageId);
         if (!page) return;
         const isConversational = (state.form?.settings as FormSettings | undefined)?.formLayout === "conversational";
@@ -295,7 +295,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   updateQuestion: (pageId, questionId, patch) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         const page = state.content?.pages.find((p) => p.id === pageId);
         const question = page?.questions.find((q) => q.id === questionId);
         if (!question) return;
@@ -306,7 +306,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   deleteQuestion: (pageId, questionId) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         const page = state.content?.pages.find((p) => p.id === pageId);
         if (!page) return;
         page.questions = page.questions.filter((q) => q.id !== questionId);
@@ -323,7 +323,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   reorderQuestions: (pageId, fromIndex, toIndex) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         const page = state.content?.pages.find((p) => p.id === pageId);
         if (!page) return;
         const [moved] = page.questions.splice(fromIndex, 1);
@@ -337,7 +337,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   addOption: (pageId, questionId) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         const page = state.content?.pages.find((p) => p.id === pageId);
         const question = page?.questions.find((q) => q.id === questionId);
         if (!question) return;
@@ -353,7 +353,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   updateOption: (pageId, questionId, optionId, label) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         const page = state.content?.pages.find((p) => p.id === pageId);
         const question = page?.questions.find((q) => q.id === questionId);
         const option = question?.options?.find((o) => o.id === optionId);
@@ -365,7 +365,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   deleteOption: (pageId, questionId, optionId) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         const page = state.content?.pages.find((p) => p.id === pageId);
         const question = page?.questions.find((q) => q.id === questionId);
         if (!question?.options) return;
@@ -377,7 +377,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   reorderOptions: (pageId, questionId, fromIndex, toIndex) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         const page = state.content?.pages.find((p) => p.id === pageId);
         const question = page?.questions.find((q) => q.id === questionId);
         if (!question?.options) return;
@@ -392,7 +392,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   addPage: () =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         if (!state.content) return;
         const newPage: FormPage = {
           id: genPageId(),
@@ -409,7 +409,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   deletePage: (pageId) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         if (!state.content) return;
         const idx = state.content.pages.findIndex((p) => p.id === pageId);
         if (idx === -1) return;
@@ -428,7 +428,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   reorderPages: (fromIndex, toIndex) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         if (!state.content) return;
         const [moved] = state.content.pages.splice(fromIndex, 1);
         state.content.pages.splice(toIndex, 0, moved!);
@@ -440,7 +440,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   updatePageLayout: (pageId, layout) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         const page = state.content?.pages.find((p) => p.id === pageId);
         if (!page) return;
         page.layout = layout;
@@ -450,7 +450,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   updatePageCoverImage: (pageId, imageUrl) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         const page = state.content?.pages.find((p) => p.id === pageId);
         if (!page) return;
         page.coverImage = imageUrl;
@@ -460,7 +460,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   updatePageImagePosition: (pageId, position) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         const page = state.content?.pages.find((p) => p.id === pageId);
         if (!page) return;
         page.imagePosition = position;
@@ -472,7 +472,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   updateStartPage: (patch) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         if (!state.content) return;
         state.content.startPage = {
           ...(state.content.startPage ?? {}),
@@ -484,7 +484,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   updateEndPage: (patch) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         if (!state.content) return;
         state.content.endPage = { ...state.content.endPage, ...patch };
         markChange(state, "soft");
@@ -495,7 +495,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   addLogicRule: (rule) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         if (!state.content) return;
         state.content.logic.push(rule);
         markChange(state, "soft");
@@ -504,7 +504,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   updateLogicRule: (ruleId, patch) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         const rule = state.content?.logic.find((r) => r.id === ruleId);
         if (!rule) return;
         Object.assign(rule, patch);
@@ -514,7 +514,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   deleteLogicRule: (ruleId) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         if (!state.content) return;
         state.content.logic = state.content.logic.filter((r) => r.id !== ruleId);
         markChange(state, "soft");
@@ -525,21 +525,21 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   updateTitle: (title) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         if (state.form) state.form.title = title;
       }),
     ),
 
   updateDescription: (description) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         if (state.form) state.form.description = description;
       }),
     ),
 
   updateSettings: (settings) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         if (!state.form) return;
         state.form.settings = { ...state.form.settings, ...settings };
       }),
@@ -547,7 +547,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   updateSlug: (slug) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         if (state.form) state.form.slug = slug;
       }),
     ),
@@ -558,7 +558,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   updateThemeLocally: (theme) =>
     set(
-      produce((state: FormEditorState) => {
+      produce<FormEditorState>((state) => {
         if (state.form) state.form.theme = theme;
       }),
     ),

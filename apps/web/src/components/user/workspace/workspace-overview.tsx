@@ -1,12 +1,12 @@
 "use client";
 
-import React, { use } from "react";
+import React, { use, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, BarChart2, Gauge, Users, AlertTriangle } from "lucide-react";
+import { FileText, BarChart2, Gauge, Users, AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { WorkspaceEmptyState } from "./workspace-empty-state";
 import { FormIcon } from "@/assets/icons/form-icon";
 import { Spinner } from "@/components/ui/spinner";
-import { useForms } from "@/hooks/user/use-form";
+import { useForms, useDeleteForm } from "@/hooks/user/use-form";
 import { useFormUsage, useMemberUsage, useRemainingQuota } from "@/hooks/user/use-billing";
 import { cn } from "@/lib/utils";
 import {
@@ -17,6 +17,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { CreateFormModal } from "@/components/modals/create-form-modal";
 
 const WARN_THRESHOLD = 0.8;
 
@@ -74,6 +86,9 @@ export function WorkspaceOverviewSection({
   const { data: formUsage } = useFormUsage(workspaceId);
   const { data: memberUsage } = useMemberUsage(workspaceId);
   const { data: quota } = useRemainingQuota(workspaceId);
+  const [createFormOpen, setCreateFormOpen] = useState(false);
+  const [deleteFormId, setDeleteFormId] = useState<string | null>(null);
+  const { mutate: deleteForm, isPending: isDeleting } = useDeleteForm();
 
   if (isLoading) {
     return (
@@ -145,10 +160,22 @@ export function WorkspaceOverviewSection({
           />
         </div>
 
-        {/* Recent Activity */}
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Recent Activity
-        </p>
+        {/* Recent Activity header */}
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Recent Activity
+          </p>
+          <CreateFormModal
+            workspaceId={workspaceId}
+            open={createFormOpen}
+            onOpenChange={setCreateFormOpen}
+          >
+            <Button size="sm" className="gap-1.5">
+              <Plus className="size-3.5" />
+              Create Form
+            </Button>
+          </CreateFormModal>
+        </div>
 
         <div className="rounded-lg border border-border overflow-hidden">
           <Table>
@@ -169,9 +196,10 @@ export function WorkspaceOverviewSection({
                 <TableHead className="text-xs text-muted-foreground font-medium">
                   Created At
                 </TableHead>
-                <TableHead className="text-xs text-muted-foreground font-medium pr-4">
+                <TableHead className="text-xs text-muted-foreground font-medium">
                   Live
                 </TableHead>
+                <TableHead className="text-xs text-muted-foreground font-medium pr-4 w-12" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -182,7 +210,7 @@ export function WorkspaceOverviewSection({
                   onClick={() =>
                     router.push(
                       form.status === "PUBLISHED"
-                        ? `/ws/${workspaceId}/f/${form.id}/responses`
+                        ? `/ws/${workspaceId}/f/${form.id}/result`
                         : `/ws/${workspaceId}/f/${form.id}/editor`,
                     )
                   }
@@ -207,7 +235,7 @@ export function WorkspaceOverviewSection({
                   <TableCell className="text-sm text-muted-foreground">
                     {formatDate(form.createdAt!)}
                   </TableCell>
-                  <TableCell className="pr-4">
+                  <TableCell>
                     <span className="relative flex items-center justify-center size-4">
                       {form.status === "PUBLISHED" ? (
                         <>
@@ -219,12 +247,50 @@ export function WorkspaceOverviewSection({
                       )}
                     </span>
                   </TableCell>
+                  <TableCell className="pr-4">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteFormId(form.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 flex items-center justify-center size-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
       </div>
+
+      <AlertDialog open={!!deleteFormId} onOpenChange={(open) => !open && setDeleteFormId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete form?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the form and all its responses. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (!deleteFormId) return;
+                deleteForm(
+                  { formId: deleteFormId, workspaceId },
+                  { onSettled: () => setDeleteFormId(null) },
+                );
+              }}
+            >
+              {isDeleting ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

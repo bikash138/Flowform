@@ -40,7 +40,7 @@ import { FormSettingsModal } from "@/components/modals/form-settings-modal";
 import { useFormEditorStore } from "@/store/use-form-editor-store";
 import { useSyncContent, useUpdateFont } from "@/hooks/user/use-form";
 import { AVAILABLE_FONTS } from "@/data/fonts";
-import type { FormTheme } from "@flowform/database";
+import type { FormFont } from "@flowform/database/models";
 
 export function FormPreviewToolbar() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -53,7 +53,8 @@ export function FormPreviewToolbar() {
   const setPreviewMode   = useFormEditorStore((s) => s.setPreviewMode);
   const setDesignPanel   = useFormEditorStore((s) => s.setDesignPanelOpen);
 
-  const currentFont = (form?.theme as FormTheme | undefined)?.fontFamily ?? "Inter";
+  const formFont    = form?.font as FormFont | undefined;
+  const currentFont = formFont?.fontFamily ?? "Inter";
   const { mutate: updateFont } = useUpdateFont();
 
   const [addContentOpen, setAddContentOpen] = React.useState(false);
@@ -151,7 +152,7 @@ export function FormPreviewToolbar() {
                   key={font.value}
                   onSelect={() => {
                     if (!form?.id || !workspaceId) return;
-                    updateFont({ formId: form.id, workspaceId, fontFamily: font.value });
+                    updateFont({ formId: form.id, workspaceId, font: { ...(formFont ?? { fontSize: "md", letterSpacing: "normal" }), fontFamily: font.value } });
                   }}
                   className="flex items-center justify-between gap-2"
                 >

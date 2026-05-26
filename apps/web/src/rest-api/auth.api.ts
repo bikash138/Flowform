@@ -37,13 +37,13 @@ export const signInWithEmail = async (
 export const signInWithGithub = async (callbackUrl?: string) => {
   return await authClient.signIn.social({
     provider: "github",
-    callbackURL: callbackUrl || `${env.NEXT_PUBLIC_CLIENT_URL}/workspace`,
+    callbackURL: callbackUrl || `${env.NEXT_PUBLIC_CLIENT_URL}/ws`,
   });
 };
 
 export const signInWithGoogle = async (callbackUrl?: string) => {
   return await authClient.signIn.social({
     provider: "google",
-    callbackURL: callbackUrl || `${env.NEXT_PUBLIC_CLIENT_URL}/workspace`,
+    callbackURL: callbackUrl || `${env.NEXT_PUBLIC_CLIENT_URL}/ws`,
   });
 };

@@ -13,11 +13,16 @@ export function NavbarLinks() {
   const pathname = usePathname();
   const isPublished = useFormEditorStore((s) => (s.form?.publishVersion ?? 0) > 0);
 
-  const base = `/workspace/${workspaceId}/forms/${formId}`;
+  const base = `/ws/${workspaceId}/f/${formId}`;
 
   const navLinks = [
     { label: "Editor", href: `${base}/editor` },
-    ...(isPublished ? [{ label: "Results", href: `${base}/response` }] : []),
+    ...(isPublished
+      ? [
+          { label: "Analytics", href: `${base}/analytics` },
+          { label: "Results", href: `${base}/result` },
+        ]
+      : []),
     { label: "Share", href: `${base}/share` },
   ];
 

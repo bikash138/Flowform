@@ -6,7 +6,7 @@ import { useFormEditorStore } from "@/store/use-form-editor-store";
 import { useSync } from "@/hooks/user/use-sync";
 import { FormBuilderNavbar } from "@/components/user/editor/form-editor-navbar";
 import { Spinner } from "@/components/ui/spinner";
-import type { FormContent } from "@flowform/database";
+import type { FormContent } from "@flowform/database/models";
 
 export default function FormRootLayout({
   children,

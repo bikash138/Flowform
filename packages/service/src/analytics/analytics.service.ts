@@ -219,7 +219,12 @@ export class AnalyticsService {
     const content = snapshot.content as FormContent;
     const columns: ResponseColumn[] = content.pages
       .flatMap((p) => p.questions)
-      .map((q) => ({ questionId: q.id, label: q.label, type: q.type }));
+      .map((q) => ({
+        questionId: q.id,
+        label: q.label,
+        type: q.type,
+        options: q.options?.map((o) => ({ id: o.id, label: o.label })),
+      }));
 
     const rows: ResponseRow[] = rawRows.map((r) => ({
       id: r.id,
@@ -264,7 +269,12 @@ export class AnalyticsService {
     const content = snapshot.content as FormContent;
     const columns: ResponseColumn[] = content.pages
       .flatMap((p) => p.questions)
-      .map((q) => ({ questionId: q.id, label: q.label, type: q.type }));
+      .map((q) => ({
+        questionId: q.id,
+        label: q.label,
+        type: q.type,
+        options: q.options?.map((o) => ({ id: o.id, label: o.label })),
+      }));
 
     const rows: ResponseRow[] = rawRows.map((r) => ({
       id: r.id,

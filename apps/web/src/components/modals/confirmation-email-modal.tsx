@@ -15,7 +15,7 @@ import { ImageUploader } from "@/components/common/image-uploader";
 import { convertToWebp } from "@/lib/image";
 import { useGetFormLogoUploadUrl } from "@/hooks/user/use-form";
 import { toast } from "sonner";
-import type { FormSettings } from "@flowform/database";
+import type { FormSettings } from "@flowform/database/models";
 
 export type ConfirmationEmailData = NonNullable<FormSettings["confirmationEmail"]>;
 

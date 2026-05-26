@@ -1,4 +1,4 @@
-import type { FormTheme } from "@flowform/database";
+import type { FormTheme } from "@flowform/database/models";
 
 export type ThemeTemplate = {
   id: string;
@@ -16,7 +16,7 @@ export const FREE_THEMES: ThemeTemplate[] = [
       primaryColor: "#D9B38C",
       backgroundColor: "#FFFFFF",
       accentColor: "#A68A6D",
-      fontFamily: "Open Sans",
+
       borderRadius: "rounded",
       backgroundImage: null,
     },
@@ -29,7 +29,7 @@ export const FREE_THEMES: ThemeTemplate[] = [
       primaryColor: "#2B2B2B",
       backgroundColor: "#FFFFFF",
       accentColor: "#666666",
-      fontFamily: "Inter",
+
       borderRadius: "sharp",
       backgroundImage: null,
     },
@@ -42,7 +42,7 @@ export const FREE_THEMES: ThemeTemplate[] = [
       primaryColor: "#6366F1",
       backgroundColor: "#0F0F0F",
       accentColor: "#818CF8",
-      fontFamily: "Inter",
+
       borderRadius: "rounded",
       backgroundImage: null,
     },
@@ -55,7 +55,7 @@ export const FREE_THEMES: ThemeTemplate[] = [
       primaryColor: "#0EA5E9",
       backgroundColor: "#F0F9FF",
       accentColor: "#0284C7",
-      fontFamily: "Open Sans",
+
       borderRadius: "pill",
       backgroundImage: null,
     },
@@ -68,7 +68,7 @@ export const FREE_THEMES: ThemeTemplate[] = [
       primaryColor: "#16A34A",
       backgroundColor: "#F0FDF4",
       accentColor: "#15803D",
-      fontFamily: "Open Sans",
+
       borderRadius: "rounded",
       backgroundImage: null,
     },
@@ -81,7 +81,7 @@ export const FREE_THEMES: ThemeTemplate[] = [
       primaryColor: "#F97316",
       backgroundColor: "#FFF7ED",
       accentColor: "#EA580C",
-      fontFamily: "Open Sans",
+
       borderRadius: "rounded",
       backgroundImage: null,
     },

@@ -1,16 +1,20 @@
-import type { QuestionType } from "@flowform/database";
+import type { QuestionType } from "@flowform/database/models";
 
 const ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
 
 const QUESTION_PREFIX: Record<QuestionType, string> = {
-  text: "T",
-  email: "E",
-  number: "N",
-  select: "S",
-  radio: "R",
-  checkbox: "C",
-  rating: "G",
-  date: "D",
+  short_text: "T",
+  long_text:  "L",
+  email:      "E",
+  number:     "N",
+  phone:      "P",
+  url:        "U",
+  select:     "S",
+  radio:      "R",
+  checkbox:   "C",
+  rating:     "G",
+  date:       "D",
+  yes_no:     "Y",
 };
 
 function genId(prefix: string): string {

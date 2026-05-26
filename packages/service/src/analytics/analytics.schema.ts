@@ -75,6 +75,9 @@ export const ResponseColumnSchema = z.object({
   questionId: z.string(),
   label: z.string(),
   type: z.string() as z.ZodType<QuestionType>,
+  options: z
+    .array(z.object({ id: z.string(), label: z.string() }))
+    .optional(),
 });
 
 export const ResponseRowSchema = z.object({

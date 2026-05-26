@@ -62,7 +62,7 @@ export function WorkspaceContent({ workspaceId }: { workspaceId: string }) {
                 forms.map((form) => (
                   <Link
                     key={form.id}
-                    href={`/workspace/${workspaceId}/forms/${form.id}/editor`}
+                    href={`/ws/${workspaceId}/f/${form.id}/editor`}
                     className="grid grid-cols-[1fr_auto_100px_100px_110px_80px_40px] gap-x-4 items-center px-4 py-3 hover:bg-muted/20 transition-colors group cursor-pointer rounded-md"
                   >
                     <div className="flex items-center gap-3 min-w-0">

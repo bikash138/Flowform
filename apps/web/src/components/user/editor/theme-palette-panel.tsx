@@ -9,7 +9,7 @@ import { useFormEditorStore } from "@/store/use-form-editor-store";
 import { useUpdateTheme, useThemes } from "@/hooks/user/use-form";
 import { useWorkspacePlan } from "@/hooks/user/use-billing";
 import { PlansModal } from "@/components/modals/plans-modal";
-import type { FormTheme } from "@flowform/database";
+import type { FormTheme } from "@flowform/database/models";
 
 type ThemeEntry = NonNullable<ReturnType<typeof useThemes>["data"]>[number];
 

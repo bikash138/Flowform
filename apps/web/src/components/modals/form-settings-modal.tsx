@@ -41,7 +41,7 @@ import { convertToWebp } from "@/lib/image";
 import { toast } from "sonner";
 import { useWorkspacePlan } from "@/hooks/user/use-billing";
 import { useParams } from "next/navigation";
-import type { FormSettings } from "@flowform/database/modals";
+import type { FormSettings } from "@flowform/database/models";
 import { PlansModal } from "@/components/modals/plans-modal";
 import { ConfirmationEmailModal, type ConfirmationEmailData } from "@/components/modals/confirmation-email-modal";
 import {

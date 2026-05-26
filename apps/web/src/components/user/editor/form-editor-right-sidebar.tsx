@@ -29,7 +29,7 @@ import {
   LayoutTemplate,
 } from "lucide-react";
 import { useFormEditorStore } from "@/store/use-form-editor-store";
-import type { EndPageAnimation, FormSettings } from "@flowform/database";
+import type { EndPageAnimation, FormSettings } from "@flowform/database/models";
 import { cn } from "@/lib/utils";
 
 // ─── Shared section label ─────────────────────────────────────────────────────
