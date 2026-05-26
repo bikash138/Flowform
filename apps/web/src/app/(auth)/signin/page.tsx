@@ -5,15 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { useForm } from "@tanstack/react-form";
-import { GoogleIcon, GitHubIcon } from "@/assets/icons";
+import { GoogleIcon } from "@/assets/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  signInWithEmail,
-  signInWithGithub,
-  signInWithGoogle,
-} from "@/rest-api/auth.api";
+import { signInWithEmail, signInWithGoogle } from "@/rest-api/auth.api";
 
 function SignInContent() {
   const router = useRouter();
@@ -105,15 +101,6 @@ function SignInContent() {
                 <span>Continue with Google</span>
               </button>
 
-              <button
-                type="button"
-                id="signin-github-btn"
-                onClick={() => signInWithGithub(callbackUrl || undefined)}
-                className="group flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground shadow-sm transition-all duration-200 hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary/30"
-              >
-                <GitHubIcon />
-                <span>Continue with GitHub</span>
-              </button>
             </div>
 
             {/* Divider */}

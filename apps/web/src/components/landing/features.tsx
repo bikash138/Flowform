@@ -6,19 +6,19 @@ const BENEFITS = [
     icon: Zap,
     title: "High Completion Rates",
     description:
-      "Clean, distraction-free forms that feel natural to fill out. No clutter, no friction — just questions that get answered.",
+      "Conversational or traditional layouts, built-in progress bars, and conditional logic keep respondents engaged from first question to submit.",
   },
   {
     icon: BarChart2,
-    title: "Instant Responses",
+    title: "Instant Response Insights",
     description:
-      "See every submission the moment it arrives. Your response dashboard updates in real time so you're never waiting.",
+      "Every submission hits your dashboard in real time with geographic data, device breakdown, and question-level analytics — no extra tools needed.",
   },
   {
     icon: Paintbrush,
     title: "Your Brand, Your Style",
     description:
-      "Custom colors, fonts, and layouts on every form. Your respondents see your brand, not ours.",
+      "12 built-in themes, custom fonts, colors, and border styles. On Pro Max, remove the Flowform watermark entirely.",
   },
 ];
 
@@ -33,47 +33,46 @@ function FormMockup() {
             Customer Feedback
           </span>
         </div>
-        <div className="h-5 w-48 rounded bg-[#F2E8DA]" />
+        <p className="text-base font-bold text-[#2B2B2B]">How did we do today?</p>
       </div>
 
       {/* Form fields */}
       <div className="px-6 py-5 flex flex-col gap-5">
-        {/* Field 1 */}
+        {/* Field 1 — Short Text */}
         <div className="flex flex-col gap-1.5">
-          <div className="h-3 w-24 rounded bg-[#E8DDD0]" />
+          <span className="text-xs font-semibold text-[#6B6256]">Your Name</span>
           <div className="h-10 w-full rounded-lg border border-[#E8DDD0] bg-[#FDFAF6] flex items-center px-3">
-            <div className="h-2.5 w-32 rounded bg-[#EDE7DC]" />
+            <span className="text-xs text-[#C0B0A0]">John Smith</span>
           </div>
         </div>
 
-        {/* Field 2 */}
+        {/* Field 2 — Radio */}
         <div className="flex flex-col gap-1.5">
-          <div className="h-3 w-36 rounded bg-[#E8DDD0]" />
+          <span className="text-xs font-semibold text-[#6B6256]">Overall Satisfaction</span>
           <div className="flex gap-2">
             {["Very satisfied", "Satisfied", "Neutral"].map((opt) => (
               <div
                 key={opt}
                 className="flex-1 h-9 rounded-lg border border-[#E8DDD0] bg-[#FDFAF6] flex items-center justify-center"
               >
-                <div
-                  className="h-2 rounded bg-[#EDE7DC]"
-                  style={{ width: `${opt.length * 4}px` }}
-                />
+                <span className="text-[0.6rem] text-[#8B7B6B] font-medium">{opt}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Field 3 */}
+        {/* Field 3 — Long Text */}
         <div className="flex flex-col gap-1.5">
-          <div className="h-3 w-28 rounded bg-[#E8DDD0]" />
-          <div className="h-20 w-full rounded-lg border border-[#E8DDD0] bg-[#FDFAF6]" />
+          <span className="text-xs font-semibold text-[#6B6256]">Any comments?</span>
+          <div className="h-20 w-full rounded-lg border border-[#E8DDD0] bg-[#FDFAF6] flex items-start p-3">
+            <span className="text-xs text-[#C0B0A0]">Share your thoughts...</span>
+          </div>
         </div>
 
         {/* Submit button */}
         <div className="pt-1">
           <div className="h-10 w-28 rounded-xl bg-[#2B2B2B] flex items-center justify-center">
-            <div className="h-2.5 w-14 rounded bg-white/30" />
+            <span className="text-sm font-semibold text-white">Submit</span>
           </div>
         </div>
       </div>

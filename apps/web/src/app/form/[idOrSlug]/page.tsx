@@ -870,14 +870,19 @@ export default function PublicFormPage() {
     }
   }
 
-  function doSubmit() {
+  function doSubmit(pendingAnswers?: Answers) {
     if (!responseId) return;
+
+    // pendingAnswers overrides answers for any key — used by auto-advance to
+    // include the just-set answer that hasn't propagated to the React state
+    // closure yet (stale closure from the render that created the setTimeout).
+    const merged = pendingAnswers ? { ...answers, ...pendingAnswers } : answers;
 
     const answerEntries = pages.flatMap((page) =>
       page.questions.map((q) => ({
         questionId: q.id,
         type: q.type,
-        value: answers[q.id] ?? null,
+        value: merged[q.id] ?? null,
       }))
     );
 
@@ -909,8 +914,9 @@ export default function PublicFormPage() {
     setAnswer(questionId, val);
     if (isConversational && AUTO_ADVANCE_TYPES.has(type) && val !== null) {
       if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+      const pendingAnswers: Answers = { [questionId]: val };
       autoAdvanceTimer.current = setTimeout(() => {
-        if (isLastPage) doSubmit();
+        if (isLastPage) doSubmit(pendingAnswers);
         else { setPageIndex((p) => p + 1); setErrors({}); }
       }, 450);
     }

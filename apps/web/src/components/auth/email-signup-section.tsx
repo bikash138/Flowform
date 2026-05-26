@@ -4,15 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useForm } from "@tanstack/react-form";
-import { GoogleIcon, GitHubIcon } from "@/assets/icons";
+import { GoogleIcon } from "@/assets/icons";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  signUpWithEmail,
-  signInWithGithub,
-  signInWithGoogle,
-} from "@/rest-api/auth.api";
+import { signUpWithEmail, signInWithGoogle } from "@/rest-api/auth.api";
 
 type SignupSwappableSectionProps = {
   isEmailMode: boolean;
@@ -268,15 +264,6 @@ export function SignupSwappableSection({
               <span>Sign up with Google</span>
             </button>
 
-            <button
-              type="button"
-              id="signup-github-btn"
-              onClick={() => signInWithGithub(callbackUrl || undefined)}
-              className="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground shadow-sm transition-all duration-200 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-            >
-              <GitHubIcon />
-              <span>Sign up with GitHub</span>
-            </button>
           </div>
 
           <div className="my-5 flex w-full items-center gap-3">
