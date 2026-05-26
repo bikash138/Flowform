@@ -37,6 +37,11 @@ export const billingRouter = router({
     .output(FormUsageOutputSchema)
     .query(({ ctx }) => billingService.getFormUsage(ctx.workspaceId)),
 
+  getMemberUsage: workspaceProcedure
+    .meta({ openapi: { method: "GET", path: getPath("/member-usage"), tags: TAGS } })
+    .output(FormUsageOutputSchema)
+    .query(({ ctx }) => billingService.getMemberUsage(ctx.workspaceId)),
+
   activatePlan: permissionProcedure("billing:purchase")
     .meta({ openapi: { method: "POST", path: getPath("/activate"), tags: TAGS } })
     .input(ActivatePlanInputSchema.omit({ workspaceId: true }))

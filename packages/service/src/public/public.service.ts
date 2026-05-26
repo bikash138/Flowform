@@ -32,6 +32,9 @@ import type {
   StartSessionOutput,
   SubmitResponseInput,
   SubmitResponseOutput,
+  PreviewFormInput,
+  PreviewFormOutput,
+  PreviewFormSettings,
 } from "./public.schema";
 
 const log = createLogger("public-service");
@@ -175,6 +178,36 @@ export class PublicFormService {
     const count = await this.repo.getSubmissionCountFromSummary(formId);
     await setCachedSubmissionCount(formId, count);
     return count;
+  }
+
+  // PREVIEW: Get draft form data without any tracking or analytics
+  async previewPublicForm(input: PreviewFormInput): Promise<PreviewFormOutput> {
+    const doc = await this.repo.findFormForPreview(input.formId);
+    if (!doc) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Form not found." });
+    }
+
+    const settings = doc.settings as FormSettings;
+    const previewSettings: PreviewFormSettings = {
+      accessType: settings.accessType,
+      collectEmail: settings.collectEmail,
+      formLayout: settings.formLayout,
+      navbar: settings.navbar,
+      progressBar: settings.progressBar,
+      languages: settings.languages ?? [settings.defaultLanguage ?? "en"],
+      defaultLanguage: settings.defaultLanguage,
+      removeWatermark: settings.removeWatermark,
+      redirectOnComplete: settings.redirectOnComplete ?? null,
+    };
+
+    return {
+      id: doc.id,
+      title: doc.title,
+      content: (doc.draftContent ?? null) as unknown,
+      theme: doc.theme as FormTheme,
+      font: doc.font as FormFont,
+      settings: previewSettings,
+    };
   }
 
   // STEP 1: Get Public Form

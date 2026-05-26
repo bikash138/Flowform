@@ -17,7 +17,7 @@ const s3Client = new S3Client({
 
 const BUCKET = env.s3.bucketName;
 
-export type UploadType = "avatar" | "brand";
+export type UploadType = "avatar" | "brand" | "logo";
 
 export interface UploadUrlResult {
   uploadUrl: string;

@@ -4,6 +4,7 @@ import { workspaceProcedure } from "../middlewares/workspace.middleware";
 import { formService } from "../services";
 import {
   CreateFormInputSchema,
+  GetFormByIdInputSchema,
   ListFormsInputSchema,
   SyncFormInputSchema,
   PublishFormInputSchema,
@@ -28,6 +29,7 @@ import {
   FormDetailSchema,
 } from "@flowform/services/form";
 import { generatePath } from "../utils/path-generator";
+import { generateUploadUrl } from "@flowform/services/s3";
 
 const TAGS = ["Forms"];
 const getPath = generatePath("/workspaces/:workspaceId/forms");
@@ -51,7 +53,7 @@ export const formRouter = router({
     .meta({
       openapi: { method: "GET", path: getPath("/:formId"), tags: TAGS },
     })
-    .input(z.object({ formId: z.uuid() }))
+    .input(GetFormByIdInputSchema)
     .output(FormDetailSchema)
     .query(({ input, ctx }) => formService.getFormById(input.formId, ctx.workspaceId)),
 
@@ -163,7 +165,7 @@ export const formRouter = router({
     .meta({ openapi: { method: "GET", path: getPath("/check-slug"), tags: TAGS } })
     .input(CheckSlugInputSchema)
     .output(z.object({ available: z.boolean() }))
-    .query(({ input, ctx }) => formService.checkFormSlugAvailiblity(input, ctx.workspaceId)),
+    .query(({ input, ctx }) => formService.checkFormSlugAvailability(input, ctx.workspaceId)),
 
   listThemes: workspaceProcedure
     .meta({
@@ -171,6 +173,14 @@ export const formRouter = router({
     })
     .output(ListThemesOutputSchema)
     .query(() => formService.listThemes()),
+
+  getFormLogoUploadUrl: workspaceProcedure
+    .meta({
+      openapi: { method: "POST", path: getPath("/:formId/logo-upload-url"), tags: TAGS },
+    })
+    .input(z.object({ formId: z.string().min(1) }))
+    .output(z.object({ uploadUrl: z.string(), publicUrl: z.string(), key: z.string() }))
+    .mutation(({ input }) => generateUploadUrl(input.formId, "logo")),
 
   getResponseCount: workspaceProcedure
     .meta({

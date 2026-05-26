@@ -34,6 +34,14 @@ export const useFormUsage = (workspaceId: string) => {
   });
 };
 
+export const useMemberUsage = (workspaceId: string) => {
+  const trpc = useTRPC();
+  return useQuery({
+    ...trpc.billing.getMemberUsage.queryOptions({ workspaceId }),
+    enabled: !!workspaceId,
+  });
+};
+
 export const useActivatePlan = (workspaceId: string) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();

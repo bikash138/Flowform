@@ -55,4 +55,14 @@ export function useStartSession() {
   });
 }
 
+export function usePreviewForm(formId: string) {
+  const trpc = useTRPC();
+  return useQuery(
+    trpc.public.previewForm.queryOptions(
+      { formId },
+      { enabled: !!formId },
+    ),
+  );
+}
+
 export type { SubmitInput };

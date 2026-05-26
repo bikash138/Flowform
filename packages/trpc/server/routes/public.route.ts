@@ -9,6 +9,8 @@ import {
   StartSessionOutputSchema,
   SubmitResponseInputSchema,
   SubmitResponseOutputSchema,
+  PreviewFormInputSchema,
+  PreviewFormOutputSchema,
 } from "@flowform/services/public";
 import { generatePath } from "../utils/path-generator";
 
@@ -47,4 +49,9 @@ export const publicRouter = router({
     .mutation(({ input, ctx }) =>
       publicFormService.submitResponse(input, ctx.anonId, ctx.ip),
     ),
+
+  previewForm: publicProcedure
+    .input(PreviewFormInputSchema)
+    .output(PreviewFormOutputSchema)
+    .query(({ input }) => publicFormService.previewPublicForm(input)),
 });

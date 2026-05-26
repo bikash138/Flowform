@@ -115,7 +115,41 @@ export const PublicFormOutputSchema = z.object({
   settings: PublicFormSettingsSchema.nullable(),
 });
 
+// Preview Form
+
+export const PreviewFormInputSchema = z.object({
+  formId: z.string().min(1),
+});
+
+export const PreviewFormSettingsSchema = z.object({
+  accessType: z.enum(["public", "unlisted", "password_protected"]),
+  collectEmail: z.boolean(),
+  formLayout: z.enum(FormLayout),
+  navbar: PublicFormNavbarSchema,
+  progressBar: PublicFormProgressBarSchema,
+  languages: z.array(z.string()),
+  defaultLanguage: z.string(),
+  removeWatermark: z.boolean(),
+  redirectOnComplete: z.object({
+    url: z.url(),
+    label: z.string(),
+  }).nullable().optional(),
+});
+
+export const PreviewFormOutputSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  content: z.unknown().nullable(),
+  theme: PublicFormThemeSchema,
+  font: PublicFormFontSchema,
+  settings: PreviewFormSettingsSchema,
+});
+
 // Inferred Types
+
+export type PreviewFormInput = z.infer<typeof PreviewFormInputSchema>;
+export type PreviewFormOutput = z.infer<typeof PreviewFormOutputSchema>;
+export type PreviewFormSettings = z.infer<typeof PreviewFormSettingsSchema>;
 
 export type TrackViewInput = z.infer<typeof TrackViewInputSchema>;
 export type TrackViewOutput = z.infer<typeof TrackViewOutputSchema>;

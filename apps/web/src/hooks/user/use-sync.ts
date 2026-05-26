@@ -33,9 +33,15 @@ export function useSync(formId: string | null, workspaceId: string | null): void
           });
 
           const latest = useFormEditorStore.getState();
-          // Only mark synced if no new edits landed while we were saving
           if (latest.syncStatus === "saving") {
+            // No edits during save — mark synced and update version
             latest.syncSuccess(result.editVersion);
+          } else {
+            // User edited while save was in flight — bump editVersion so the next
+            // sync doesn't CONFLICT, then re-trigger the subscriber by setting
+            // syncStatus:"dirty" (prev will be "dirty", not "saving", so the guard
+            // passes and the debounce restarts correctly)
+            useFormEditorStore.setState({ editVersion: result.editVersion, syncStatus: "dirty" });
           }
         } catch (error: unknown) {
           const tRPCError = error as { data?: { code?: string; httpStatus?: number } };

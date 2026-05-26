@@ -133,8 +133,9 @@ export const usePublishForm = () => {
 
   return useMutation({
     ...trpc.forms.publishForm.mutationOptions(),
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       toast.success("Form published");
+      useFormEditorStore.getState().publishSuccess(data.publishVersion);
       queryClient.invalidateQueries({
         queryKey: trpc.forms.getFormById.queryKey({
           formId: variables.formId,
@@ -239,8 +240,18 @@ export const usePatchPublish = () => {
 
   return useMutation({
     ...trpc.forms.patchPublish.mutationOptions(),
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       toast.success("Form updated");
+      useFormEditorStore.getState().publishSuccess(data.publishVersion);
+      // patchPublish increments editVersion on the backend — update local version
+      // to prevent CONFLICT on the next auto-save
+      const latest = useFormEditorStore.getState();
+      if (latest.syncStatus === "dirty") {
+        // Pending edits exist — keep dirty but bump editVersion so next sync succeeds
+        useFormEditorStore.setState({ editVersion: data.editVersion, syncStatus: "dirty" });
+      } else {
+        useFormEditorStore.setState({ editVersion: data.editVersion, syncStatus: "synced" });
+      }
       queryClient.invalidateQueries({
         queryKey: trpc.forms.getFormById.queryKey({
           formId: variables.formId,
@@ -252,14 +263,21 @@ export const usePatchPublish = () => {
   });
 };
 
+export const useGetFormLogoUploadUrl = () => {
+  const trpc = useTRPC();
+  return useMutation(trpc.forms.getFormLogoUploadUrl.mutationOptions());
+};
+
 export const useUpdateSlug = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const updateSlug = useFormEditorStore((s) => s.updateSlug);
 
   return useMutation({
     ...trpc.forms.updateSlug.mutationOptions(),
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       toast.success("Slug updated");
+      updateSlug(data.slug);
       queryClient.invalidateQueries({
         queryKey: trpc.forms.getFormById.queryKey({
           formId: variables.formId,

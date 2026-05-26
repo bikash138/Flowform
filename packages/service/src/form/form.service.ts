@@ -88,6 +88,7 @@ export class FormService {
       id: doc.id,
       title: doc.title,
       description: doc.description ?? null,
+      slug: doc.slug ?? null,
       status: doc.status,
       hasDraft: doc.hasDraft,
       publishVersion: doc.publishVersion,
@@ -231,38 +232,41 @@ export class FormService {
   ): Promise<FormDetail> {
     const original = await this.requireForm(input.formId, workspaceId);
 
+    let rawContent: FormContent;
+    if (original.draftContent) {
+      rawContent = original.draftContent as FormContent;
+    } else {
+      const snapshot = await this.repo.findLatestSnapshot(original.id);
+      if (!snapshot) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No publishable content found for this form.",
+        });
+      }
+      rawContent = snapshot.content;
+    }
+
     const idMap = new Map<string, string>();
-
-    const clonedContent: FormContent | null = original.draftContent
-      ? (() => {
-          const src = original.draftContent as FormContent;
-
-          const pages = src.pages.map((page) => {
-            const newPageId = genPageId();
-            idMap.set(page.id, newPageId);
-
-            const questions = page.questions.map((q) => {
-              const newQId = genQuestionId(q.type);
-              idMap.set(q.id, newQId);
-              return {
-                ...q,
-                id: newQId,
-                options: q.options?.map((opt) => ({ ...opt })),
-              };
-            });
-
-            return { ...page, id: newPageId, questions };
-          });
-
-          const logic = src.logic.map((rule) => ({
-            ...rule,
-            triggerId: idMap.get(rule.triggerId) ?? rule.triggerId,
-            targetId: idMap.get(rule.targetId) ?? rule.targetId,
-          }));
-
-          return { ...src, pages, logic };
-        })()
-      : null;
+    const pages = rawContent.pages.map((page) => {
+      const newPageId = genPageId();
+      idMap.set(page.id, newPageId);
+      const questions = page.questions.map((q) => {
+        const newQId = genQuestionId(q.type);
+        idMap.set(q.id, newQId);
+        return {
+          ...q,
+          id: newQId,
+          options: q.options?.map((opt) => ({ ...opt })),
+        };
+      });
+      return { ...page, id: newPageId, questions };
+    });
+    const logic = rawContent.logic.map((rule) => ({
+      ...rule,
+      triggerId: idMap.get(rule.triggerId) ?? rule.triggerId,
+      targetId: idMap.get(rule.targetId) ?? rule.targetId,
+    }));
+    const clonedContent: FormContent = { ...rawContent, pages, logic };
 
     await this.billingService.checkFormLimit(workspaceId);
 
@@ -272,7 +276,7 @@ export class FormService {
         workspaceId,
         title: `${original.title} Copy`,
         description: original.description ?? null,
-        draftContent: clonedContent ?? (original.draftContent as FormContent),
+        draftContent: clonedContent,
         theme: original.theme as FormTheme,
         font: original.font as FormFont,
         settings: {
@@ -403,7 +407,7 @@ export class FormService {
     log.info({ formId: input.formId }, "Access code updated");
   }
 
-  async checkFormSlugAvailiblity(
+  async checkFormSlugAvailability(
     input: CheckSlugInput,
     workspaceId: string,
   ): Promise<{ available: boolean }> {

@@ -12,7 +12,7 @@ import type {
   StartPage,
   EndPage,
   LogicRule,
-} from "@flowform/database";
+} from "@flowform/database/models";
 import type { useFormById } from "@/hooks/user/use-form";
 
 export type FormServerData = NonNullable<
@@ -115,10 +115,13 @@ interface FormEditorState {
   updateTitle: (title: string) => void;
   updateDescription: (description: string | null) => void;
   updateSettings: (settings: Partial<FormSettings>) => void;
+  updateSlug: (slug: string | null) => void;
 
   setDesignPanelOpen: (open: boolean) => void;
   setHoverTheme: (theme: FormTheme | null) => void;
   updateThemeLocally: (theme: FormTheme) => void;
+
+  resetEditor: () => void;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -202,6 +205,23 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
     });
   },
 
+  resetEditor: () =>
+    set({
+      form: null,
+      content: null,
+      isInitialized: false,
+      editVersion: 0,
+      activePageId: null,
+      selectedItem: null,
+      currentPageIndex: 0,
+      isFirstPage: true,
+      isLastPage: false,
+      syncStatus: "idle",
+      publishChangeType: "none",
+      designPanelOpen: false,
+      hoverTheme: null,
+    }),
+
   setSyncStatus: (status) => set({ syncStatus: status }),
 
   syncSuccess: (newEditVersion) =>
@@ -211,7 +231,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
     set((state) => ({
       publishChangeType: "none",
       form: state.form
-        ? { ...state.form, status: "PUBLISHED", publishVersion: newPublishVersion }
+        ? { ...state.form, status: "PUBLISHED", publishVersion: newPublishVersion, hasDraft: false }
         : null,
     })),
 
@@ -522,6 +542,13 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
       produce((state: FormEditorState) => {
         if (!state.form) return;
         state.form.settings = { ...state.form.settings, ...settings };
+      }),
+    ),
+
+  updateSlug: (slug) =>
+    set(
+      produce((state: FormEditorState) => {
+        if (state.form) state.form.slug = slug;
       }),
     ),
 

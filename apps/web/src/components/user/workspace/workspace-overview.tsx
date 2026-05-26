@@ -1,13 +1,14 @@
 "use client";
 
-import { use } from "react";
+import React, { use } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, BarChart2, Gauge, Sparkles } from "lucide-react";
+import { FileText, BarChart2, Gauge, Users, AlertTriangle } from "lucide-react";
 import { WorkspaceEmptyState } from "./workspace-empty-state";
 import { FormIcon } from "@/assets/icons/form-icon";
-import { PollIcon } from "@/assets/icons/poll-icon";
 import { Spinner } from "@/components/ui/spinner";
 import { useForms } from "@/hooks/user/use-form";
+import { useFormUsage, useMemberUsage, useRemainingQuota } from "@/hooks/user/use-billing";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -17,27 +18,43 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+const WARN_THRESHOLD = 0.8;
+
 function StatCard({
   icon,
   label,
   value,
-  badge,
+  warning,
 }: {
   icon: React.ReactNode;
   label: string;
   value: React.ReactNode;
-  badge?: React.ReactNode;
+  warning?: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5">
+    <div className={cn(
+      "flex flex-col gap-3 rounded-xl border bg-card p-5 transition-colors",
+      warning ? "border-red-300 bg-red-50/40 dark:bg-red-950/10" : "border-border",
+    )}>
       <div className="flex items-center justify-between">
-        <div className="flex items-center justify-center size-9 rounded-lg bg-muted/60">
+        <div className={cn(
+          "flex items-center justify-center size-9 rounded-lg",
+          warning ? "bg-red-100 dark:bg-red-900/30" : "bg-muted/60",
+        )}>
           {icon}
         </div>
-        {badge}
+        {warning && (
+          <span className="flex items-center gap-1 text-[10px] font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide">
+            <AlertTriangle className="size-3" />
+            Upgrade plan
+          </span>
+        )}
       </div>
       <div>
-        <p className="text-2xl font-bold text-foreground leading-none mb-1">
+        <p className={cn(
+          "text-2xl font-bold leading-none mb-1",
+          warning ? "text-red-600 dark:text-red-400" : "text-foreground",
+        )}>
           {value}
         </p>
         <p className="text-xs text-muted-foreground">{label}</p>
@@ -54,6 +71,9 @@ export function WorkspaceOverviewSection({
   const { workspaceId } = use(params);
   const router = useRouter();
   const { data: forms, isLoading } = useForms(workspaceId);
+  const { data: formUsage } = useFormUsage(workspaceId);
+  const { data: memberUsage } = useMemberUsage(workspaceId);
+  const { data: quota } = useRemainingQuota(workspaceId);
 
   if (isLoading) {
     return (
@@ -84,36 +104,44 @@ export function WorkspaceOverviewSection({
     });
   }
 
+  const formsWarn = formUsage
+    ? formUsage.used / (formUsage.limit ?? Infinity) >= WARN_THRESHOLD
+    : false;
+  const membersWarn = memberUsage
+    ? memberUsage.used / (memberUsage.limit ?? Infinity) >= WARN_THRESHOLD
+    : false;
+  const quotaWarn = quota
+    ? quota.usedThisMonth / quota.monthlyLimit >= WARN_THRESHOLD
+    : false;
+
   return (
     <div className="flex-1 flex flex-col overflow-auto">
       <div className="max-w-[960px] w-full mx-auto px-8 py-6">
         {/* Stat Cards */}
         <div className="grid grid-cols-4 gap-4 mb-8">
           <StatCard
-            icon={<FileText className="size-4 text-muted-foreground" />}
-            label="Forms"
-            value={forms.length}
+            icon={<FileText className={cn("size-4", formsWarn ? "text-red-500" : "text-muted-foreground")} />}
+            label="Active Forms"
+            value={formUsage ? `${formUsage.used} / ${formUsage.limit}` : forms.length}
+            warning={formsWarn}
           />
           <StatCard
-            icon={<PollIcon size={16} />}
-            label="Polls"
-            value={0}
-            badge={
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-primary/40 bg-primary-subtle text-[10px] font-semibold text-primary-dark uppercase tracking-wider">
-                <Sparkles className="size-2.5" />
-                Soon
-              </span>
-            }
+            icon={<Users className={cn("size-4", membersWarn ? "text-red-500" : "text-muted-foreground")} />}
+            label="Team Members"
+            value={memberUsage ? `${memberUsage.used} / ${memberUsage.limit}` : "—"}
+            warning={membersWarn}
           />
           <StatCard
-            icon={<BarChart2 className="size-4 text-muted-foreground" />}
-            label="Total Responses Collected"
-            value={0}
+            icon={<BarChart2 className={cn("size-4", quotaWarn ? "text-red-500" : "text-muted-foreground")} />}
+            label="Responses this month"
+            value={quota ? quota.usedThisMonth.toLocaleString() : "—"}
+            warning={quotaWarn}
           />
           <StatCard
-            icon={<Gauge className="size-4 text-muted-foreground" />}
-            label="Response Limit Left"
-            value="Unlimited"
+            icon={<Gauge className={cn("size-4", quotaWarn ? "text-red-500" : "text-muted-foreground")} />}
+            label="Response limit left"
+            value={quota ? `${quota.remaining.toLocaleString()} / ${quota.monthlyLimit.toLocaleString()}` : "—"}
+            warning={quotaWarn}
           />
         </div>
 
@@ -154,8 +182,8 @@ export function WorkspaceOverviewSection({
                   onClick={() =>
                     router.push(
                       form.status === "PUBLISHED"
-                        ? `/workspace/${workspaceId}/forms/${form.id}/responses`
-                        : `/workspace/${workspaceId}/forms/${form.id}/editor`,
+                        ? `/ws/${workspaceId}/f/${form.id}/responses`
+                        : `/ws/${workspaceId}/f/${form.id}/editor`,
                     )
                   }
                 >

@@ -7,30 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ImageUploader } from "@/components/common/image-uploader";
 import { useUpdateWorkspace, useGetLogoUploadUrl } from "@/hooks/user/use-workspace-core";
 import { toast } from "sonner";
-
-async function convertToWebp(file: File): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const blobUrl = URL.createObjectURL(file);
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      canvas.getContext("2d")?.drawImage(img, 0, 0);
-      URL.revokeObjectURL(blobUrl);
-      canvas.toBlob(
-        (blob) => (blob ? resolve(blob) : reject(new Error("webp conversion failed"))),
-        "image/webp",
-        0.9,
-      );
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(blobUrl);
-      reject(new Error("Failed to load image"));
-    };
-    img.src = blobUrl;
-  });
-}
+import { convertToWebp } from "@/lib/image";
 
 interface GeneralSettingsTabProps {
   workspace?: {

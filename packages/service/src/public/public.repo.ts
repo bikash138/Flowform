@@ -75,6 +75,15 @@ export class PublicFormRepository {
     return snapshot ?? null;
   }
 
+  async findFormForPreview(formId: string) {
+    const [row] = await this.db
+      .select()
+      .from(form)
+      .where(and(eq(form.id, formId), eq(form.isDeleted, false)))
+      .limit(1);
+    return row ?? null;
+  }
+
   async hasSubmittedResponse(formId: string, fingerprint: string): Promise<boolean> {
     const [row] = await this.db
       .select({ id: formResponse.id })

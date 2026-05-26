@@ -151,6 +151,7 @@ export const FormSummarySchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string().nullable(),
+  slug: z.string().nullable(),
   status: z.enum(FormStatus),
   hasDraft: z.boolean(),
   publishVersion: z.number(),

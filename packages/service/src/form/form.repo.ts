@@ -286,6 +286,16 @@ export class FormRepository {
     return !row;
   }
 
+  async findLatestSnapshot(formId: string): Promise<{ content: FormContent } | null> {
+    const [row] = await this.db
+      .select({ content: formPublishSnapshot.content })
+      .from(formPublishSnapshot)
+      .where(eq(formPublishSnapshot.formId, formId))
+      .orderBy(desc(formPublishSnapshot.publishVersion))
+      .limit(1);
+    return row ?? null;
+  }
+
   async findBySlug(slug: string): Promise<FormRecord | null> {
     const [doc] = await this.db
       .select()
