@@ -1,6 +1,11 @@
 import { roleEnum, workspaceInviteStatusEnum } from "./models/workspace.model";
 import { formStatusEnum } from "./models/form.model";
-import type { FormSettings, FormFont, FormTheme, QuestionType as QuestionTypeValue } from "./models/form.model";
+import type {
+  FormSettings,
+  FormFont,
+  FormTheme,
+  QuestionType as QuestionTypeValue,
+} from "./models/form.model";
 import { planIdEnum, workspacePlanStatusEnum } from "./models/billing.model";
 
 export const Role = {
@@ -64,14 +69,19 @@ export const FormAccessType = {
   UNLISTED: "unlisted",
   PASSWORD_PROTECTED: "password_protected",
 } as const satisfies Record<string, FormSettings["accessType"]>;
-export type FormAccessType = (typeof FormAccessType)[keyof typeof FormAccessType];
+export type FormAccessType =
+  (typeof FormAccessType)[keyof typeof FormAccessType];
 
 export const ProgressBarStyle = {
   BAR: "bar",
   STEPS: "steps",
   PERCENTAGE: "percentage",
-} as const satisfies Record<string, Extract<FormSettings["progressBar"], { enabled: true }>["style"]>;
-export type ProgressBarStyle = (typeof ProgressBarStyle)[keyof typeof ProgressBarStyle];
+} as const satisfies Record<
+  string,
+  Extract<FormSettings["progressBar"], { enabled: true }>["style"]
+>;
+export type ProgressBarStyle =
+  (typeof ProgressBarStyle)[keyof typeof ProgressBarStyle];
 
 export const FormLayout = {
   VERTICAL: "vertical",

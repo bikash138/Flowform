@@ -29,7 +29,7 @@ import {
   FormDetailSchema,
 } from "@flowform/services/form";
 import { generatePath } from "../utils/path-generator";
-import { generateUploadUrl } from "@flowform/services/s3";
+import { generateUploadUrl, generateUploadUrlForKey, deleteImageFromS3 } from "@flowform/services/s3";
 
 const TAGS = ["Forms"];
 const getPath = generatePath("/workspaces/:workspaceId/forms");
@@ -181,6 +181,27 @@ export const formRouter = router({
     .input(z.object({ formId: z.string().min(1) }))
     .output(z.object({ uploadUrl: z.string(), publicUrl: z.string(), key: z.string() }))
     .mutation(({ input }) => generateUploadUrl(input.formId, "logo")),
+
+  getCoverImageUploadUrl: workspaceProcedure
+    .meta({
+      openapi: { method: "POST", path: getPath("/:formId/cover-upload-url"), tags: TAGS },
+    })
+    .input(z.object({ formId: z.string().min(1), pageId: z.string().min(1) }))
+    .output(z.object({ uploadUrl: z.string(), publicUrl: z.string(), key: z.string() }))
+    .mutation(({ input }) =>
+      generateUploadUrlForKey(`cover/${input.formId}/${input.pageId}.webp`),
+    ),
+
+  deleteCoverImage: workspaceProcedure
+    .meta({
+      openapi: { method: "DELETE", path: getPath("/:formId/cover-image"), tags: TAGS },
+    })
+    .input(z.object({ formId: z.string().min(1), pageId: z.string().min(1) }))
+    .output(z.object({ success: z.literal(true) }))
+    .mutation(async ({ input }) => {
+      await deleteImageFromS3(`cover/${input.formId}/${input.pageId}.webp`);
+      return { success: true as const };
+    }),
 
   getResponseCount: workspaceProcedure
     .meta({

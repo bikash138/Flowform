@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
@@ -26,11 +26,17 @@ import {
   Info,
   Upload,
   X,
+  Check,
   LayoutTemplate,
+  Loader2,
 } from "lucide-react";
+import { useParams } from "next/navigation";
 import { useFormEditorStore } from "@/store/use-form-editor-store";
 import type { EndPageAnimation, FormSettings } from "@flowform/database/models";
 import { cn } from "@/lib/utils";
+import { convertToWebp } from "@/lib/image";
+import { useGetCoverImageUploadUrl } from "@/hooks/user/use-form";
+import { toast } from "sonner";
 
 // ─── Shared section label ─────────────────────────────────────────────────────
 
@@ -45,20 +51,63 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 // ─── Question panel ───────────────────────────────────────────────────────────
 
 function CoverImageDropzone({ pageId }: { pageId: string }) {
-  const page                  = useFormEditorStore((s) => s.content?.pages.find((p) => p.id === pageId));
-  const updatePageCoverImage  = useFormEditorStore((s) => s.updatePageCoverImage);
+  const { workspaceId, formId } = useParams<{ workspaceId: string; formId: string }>();
+  const page                    = useFormEditorStore((s) => s.content?.pages.find((p) => p.id === pageId));
+  const updatePageCoverImage    = useFormEditorStore((s) => s.updatePageCoverImage);
   const updatePageImagePosition = useFormEditorStore((s) => s.updatePageImagePosition);
   const [isDragging, setIsDragging]   = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  // Blob URL lives in a ref so React Strict Mode's double-invoke never revokes it mid-render
+  const blobUrlRef = useRef<string | null>(null);
+  const { mutateAsync: getUploadUrl } = useGetCoverImageUploadUrl();
 
+  // Revoke blob URL only on component unmount
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+    };
+  }, []);
+
+  // Stage the file locally — zero Zustand writes, no sync triggered
   const handleFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result;
-      if (typeof result === "string") updatePageCoverImage(pageId, result);
-    };
-    reader.readAsDataURL(file);
-  }, [pageId, updatePageCoverImage]);
+    if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+    blobUrlRef.current = URL.createObjectURL(file);
+    setPendingFile(file);
+  }, []);
+
+  // Discard the pending preview without uploading
+  const handleDiscard = useCallback(() => {
+    if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+    blobUrlRef.current = null;
+    setPendingFile(null);
+  }, []);
+
+  // Upload to S3 then write the public URL to the store → triggers auto-sync
+  const handleConfirmUpload = useCallback(async () => {
+    if (!pendingFile) return;
+    setIsUploading(true);
+    try {
+      const { uploadUrl, publicUrl } = await getUploadUrl({ formId, pageId, workspaceId });
+      const webpBlob = await convertToWebp(pendingFile);
+      const res = await fetch(uploadUrl, {
+        method: "PUT",
+        body: webpBlob,
+        headers: { "Content-Type": "image/webp" },
+      });
+      if (!res.ok) throw new Error(`S3 upload failed: ${res.status}`);
+      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+      setPendingFile(null);
+      updatePageCoverImage(pageId, publicUrl);
+    } catch (err) {
+      console.error("[CoverImageDropzone] upload error:", err);
+      toast.error("Failed to upload image");
+    } finally {
+      setIsUploading(false);
+    }
+  }, [pendingFile, pageId, formId, workspaceId, getUploadUrl, updatePageCoverImage]);
 
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -69,6 +118,9 @@ function CoverImageDropzone({ pageId }: { pageId: string }) {
 
   const imagePosition = page?.imagePosition ?? "left";
   const coverImage = page?.coverImage;
+  // blobUrlRef.current is read at render time — pendingFile state drives re-renders
+  const displayImage = (pendingFile ? blobUrlRef.current : null) ?? coverImage;
+  const isPending = !!pendingFile;
 
   return (
     <div className="space-y-3">
@@ -82,18 +134,50 @@ function CoverImageDropzone({ pageId }: { pageId: string }) {
         className={cn(
           "relative rounded-lg border-2 border-dashed transition-colors overflow-hidden",
           isDragging ? "border-primary bg-primary/5" : "border-border",
-          coverImage ? "h-28" : "h-20",
+          displayImage ? "h-28" : "h-20",
         )}
       >
-        {coverImage ? (
+        {isUploading ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
+            <Loader2 className="size-4 text-primary animate-spin" />
+            <span className="text-xs text-muted-foreground">Uploading…</span>
+          </div>
+        ) : displayImage ? (
           <>
-            <img src={coverImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
-            <button
-              onClick={() => updatePageCoverImage(pageId, null)}
-              className="absolute top-1.5 right-1.5 size-6 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
-            >
-              <X className="size-3.5" />
-            </button>
+            <img src={displayImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
+
+            {/* Pending state: confirm or discard */}
+            {isPending && (
+              <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleConfirmUpload(); }}
+                  className="size-8 rounded-full bg-green-500 flex items-center justify-center text-white hover:bg-green-600 transition-colors"
+                  title="Upload image"
+                >
+                  <Check className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleDiscard(); }}
+                  className="size-8 rounded-full bg-red-500 flex items-center justify-center text-white hover:bg-red-600 transition-colors"
+                  title="Discard"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Uploaded state: remove */}
+            {!isPending && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); updatePageCoverImage(pageId, null); }}
+                className="absolute top-1.5 right-1.5 size-6 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
           </>
         ) : (
           <label className="flex flex-col items-center justify-center h-full gap-1.5 cursor-pointer">

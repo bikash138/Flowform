@@ -67,7 +67,7 @@ export class ServerBuilder {
   }
 
   public setupParsers(): this {
-    this.app.use(express.json());
+    this.app.use(express.json({ limit: "2mb" }));
     return this;
   }
 

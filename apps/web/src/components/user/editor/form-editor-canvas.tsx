@@ -24,6 +24,16 @@ function hexLuminance(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
+function defaultPageBg(cardBg: string): string {
+  const h = cardBg.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  const shift = hexLuminance(cardBg) > 0.5 ? -22 : 18;
+  const clamp = (v: number) => Math.max(0, Math.min(255, v + shift));
+  return `#${clamp(r).toString(16).padStart(2, "0")}${clamp(g).toString(16).padStart(2, "0")}${clamp(b).toString(16).padStart(2, "0")}`;
+}
+
 function radiusVal(r?: "sharp" | "rounded" | "pill", fallback?: "sharp" | "rounded" | "pill"): string {
   const v = r ?? fallback ?? "rounded";
   return v === "sharp" ? "0px" : v === "pill" ? "9999px" : "0.625rem";
@@ -456,19 +466,13 @@ function ConversationalCanvas({
   }
 
   return (
-    <div
-      className="w-full h-full rounded-xl shadow-sm overflow-hidden flex flex-col"
-      style={{ backgroundColor: "var(--background)", border: "1px solid var(--form-input-border)" }}
-      onClick={(e) => e.stopPropagation()}
-    >
+    <div className="w-full h-full overflow-hidden flex flex-col" style={{ backgroundColor: "var(--background)" }}>
       {isMobile ? (
-        /* Mobile: image top 50%, question bottom 50%, nav overlay */
         <>
           <ImageSlot className="h-1/2 shrink-0" />
           <QuestionSlot withOverlayNav />
         </>
       ) : (
-        /* Desktop: two-column */
         <div className={cn("flex flex-1 min-h-0", imagePosition === "right" ? "flex-row-reverse" : "flex-row")}>
           <ImageSlot className="w-[45%] shrink-0" />
           <QuestionSlot />
@@ -518,34 +522,30 @@ export function FormEditorCanvas() {
 
   // ── Conversational layout ─────────────────────────────────────────────────
   if (isConversational) {
+    const pageBg = effectiveTheme
+      ? (effectiveTheme.pageBackgroundColor ?? defaultPageBg(effectiveTheme.backgroundColor))
+      : "#e5e7eb";
+
     return (
       <div
-        className="flex-1 flex flex-col bg-muted/20 overflow-hidden"
+        className="flex-1 flex flex-col overflow-hidden items-center justify-center"
+        style={{ backgroundColor: pageBg }}
         onClick={() => selectItem(null)}
       >
+        {/* Card — mirrors exact real-form dimensions: max-w-4xl × h-[560px] rounded-2xl shadow-xl */}
         <div
           className={cn(
-            "flex-1 flex flex-col min-h-0 mx-auto w-full",
-            isMobile ? cn(mobileMaxW, "py-4") : "p-6 max-w-[860px]",
+            "overflow-hidden shadow-xl flex flex-col",
+            isMobile
+              ? cn("w-full", mobileMaxW, "flex-1 my-4 rounded-2xl mx-auto")
+              : "w-full max-w-4xl rounded-2xl h-[560px]",
           )}
           style={canvasStyle}
+          onClick={(e) => e.stopPropagation()}
         >
-          {(showStartPage || showEndPage) ? (
-            <div
-              className={cn(
-                "flex-1 flex flex-col overflow-hidden",
-                isMobile ? "" : "rounded-xl shadow-sm",
-              )}
-              style={{
-                backgroundColor: "var(--background)",
-                border: isMobile ? undefined : "1px solid var(--form-input-border)",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {showStartPage && <StartPagePreview />}
-              {showEndPage && <EndPagePreview />}
-            </div>
-          ) : (
+          {showStartPage && <StartPagePreview />}
+          {showEndPage && <EndPagePreview />}
+          {!showStartPage && !showEndPage && (
             <ConversationalCanvas
               page={activePage}
               onSelectQuestion={(questionId) => {

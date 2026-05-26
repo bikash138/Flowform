@@ -208,10 +208,12 @@ export const useUpdateTheme = () => {
 export const useUpdateFont = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const markSoftChange = useFormEditorStore((s) => s.markSoftChange);
 
   return useMutation({
     ...trpc.forms.updateFont.mutationOptions(),
     onSuccess: (_, variables) => {
+      markSoftChange();
       queryClient.invalidateQueries({
         queryKey: trpc.forms.getFormById.queryKey({
           formId: variables.formId,
@@ -266,6 +268,16 @@ export const usePatchPublish = () => {
 export const useGetFormLogoUploadUrl = () => {
   const trpc = useTRPC();
   return useMutation(trpc.forms.getFormLogoUploadUrl.mutationOptions());
+};
+
+export const useGetCoverImageUploadUrl = () => {
+  const trpc = useTRPC();
+  return useMutation(trpc.forms.getCoverImageUploadUrl.mutationOptions());
+};
+
+export const useDeleteCoverImage = () => {
+  const trpc = useTRPC();
+  return useMutation(trpc.forms.deleteCoverImage.mutationOptions());
 };
 
 export const useUpdateSlug = () => {

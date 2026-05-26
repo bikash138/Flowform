@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -23,7 +24,6 @@ import {
   Type,
   Play,
   RefreshCw,
-  Scissors,
   Settings,
   Monitor,
   Smartphone,
@@ -39,11 +39,12 @@ import { AddContentModal } from "@/components/modals/add-content-modal";
 import { FormSettingsModal } from "@/components/modals/form-settings-modal";
 import { useFormEditorStore } from "@/store/use-form-editor-store";
 import { useSyncContent, useUpdateFont } from "@/hooks/user/use-form";
+import { useTRPC } from "@/utils/trpc";
 import { AVAILABLE_FONTS } from "@/data/fonts";
 import type { FormFont } from "@flowform/database/models";
 
 export function FormPreviewToolbar() {
-  const { workspaceId } = useParams<{ workspaceId: string }>();
+  const { workspaceId, formId } = useParams<{ workspaceId: string; formId: string }>();
 
   const syncStatus       = useFormEditorStore((s) => s.syncStatus);
   const previewMode      = useFormEditorStore((s) => s.previewMode);
@@ -52,6 +53,13 @@ export function FormPreviewToolbar() {
   const form             = useFormEditorStore((s) => s.form);
   const setPreviewMode   = useFormEditorStore((s) => s.setPreviewMode);
   const setDesignPanel   = useFormEditorStore((s) => s.setDesignPanelOpen);
+  const resetEditor      = useFormEditorStore((s) => s.resetEditor);
+  const addPage          = useFormEditorStore((s) => s.addPage);
+
+  const isConversational = (form?.settings as { formLayout?: string } | undefined)?.formLayout === "conversational";
+
+  const queryClient = useQueryClient();
+  const trpc = useTRPC();
 
   const formFont    = form?.font as FormFont | undefined;
   const currentFont = formFont?.fontFamily ?? "Inter";
@@ -74,6 +82,13 @@ export function FormPreviewToolbar() {
       }),
     );
     window.open(`/preview/${form.id}`, "_blank");
+  }
+
+  async function handleResync() {
+    resetEditor();
+    await queryClient.invalidateQueries({
+      queryKey: trpc.forms.getFormById.queryKey({ formId, workspaceId }),
+    });
   }
 
   async function handleRetry() {
@@ -100,20 +115,32 @@ export function FormPreviewToolbar() {
       <div className="flex items-center justify-between h-11 px-3 border-b border-border bg-background shrink-0">
         {/* Left: Add content + Design + sync status */}
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            className="bg-primary text-primary-foreground hover:bg-primary-dark gap-1.5 font-semibold text-xs h-8"
-            onClick={() => setAddContentOpen(true)}
-          >
-            <Plus className="size-3.5" />
-            Add content
-          </Button>
-
-          <AddContentModal
-            pageId={activePageId}
-            open={addContentOpen}
-            onOpenChange={setAddContentOpen}
-          />
+          {isConversational ? (
+            <Button
+              size="sm"
+              className="bg-primary text-primary-foreground hover:bg-primary-dark gap-1.5 font-semibold text-xs h-8"
+              onClick={addPage}
+            >
+              <Plus className="size-3.5" />
+              Add page
+            </Button>
+          ) : (
+            <>
+              <Button
+                size="sm"
+                className="bg-primary text-primary-foreground hover:bg-primary-dark gap-1.5 font-semibold text-xs h-8"
+                onClick={() => setAddContentOpen(true)}
+              >
+                <Plus className="size-3.5" />
+                Add content
+              </Button>
+              <AddContentModal
+                pageId={activePageId}
+                open={addContentOpen}
+                onOpenChange={setAddContentOpen}
+              />
+            </>
+          )}
 
           <Button
             variant="ghost"
@@ -210,8 +237,7 @@ export function FormPreviewToolbar() {
         <div className="flex items-center gap-0.5">
           {[
             { icon: Play,      label: "Preview",  onClick: handlePreview },
-            { icon: RefreshCw, label: "Refresh",  onClick: undefined },
-            { icon: Scissors,  label: "Logic",    onClick: undefined },
+            { icon: RefreshCw, label: "Resync",   onClick: handleResync },
             { icon: Settings,  label: "Settings", onClick: () => setSettingsOpen(true) },
           ].map(({ icon: Icon, label, onClick }) => (
             <Tooltip key={label}>

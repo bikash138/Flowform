@@ -25,6 +25,7 @@ interface LayoutOption {
   icon: React.ElementType;
   label: string;
   description: string;
+  disabled?: boolean;
 }
 
 const LAYOUT_OPTIONS: LayoutOption[] = [
@@ -155,26 +156,34 @@ export function CreateFormModal({
             <div className="grid gap-2">
               <p className="text-sm font-medium">Layout</p>
               <div className="grid grid-cols-2 gap-2">
-                {LAYOUT_OPTIONS.map(({ value, icon: Icon, label, description }) => (
+                {LAYOUT_OPTIONS.map(({ value, icon: Icon, label, description, disabled }) => (
                   <button
                     key={value}
                     type="button"
-                    onClick={() => setSelectedLayout(value)}
+                    disabled={disabled}
+                    onClick={() => !disabled && setSelectedLayout(value)}
                     className={cn(
-                      "flex flex-col items-start gap-2 rounded-lg border-2 p-3 text-left transition-all duration-150",
-                      selectedLayout === value
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/40 hover:bg-muted/40",
+                      "relative flex flex-col items-start gap-2 rounded-lg border-2 p-3 text-left transition-all duration-150",
+                      disabled
+                        ? "border-border opacity-50 cursor-not-allowed"
+                        : selectedLayout === value
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/40 hover:bg-muted/40",
                     )}
                   >
+                    {disabled && (
+                      <span className="absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                        Coming soon
+                      </span>
+                    )}
                     <div className={cn(
                       "flex items-center justify-center size-8 rounded-md",
-                      selectedLayout === value ? "bg-primary/10" : "bg-muted",
+                      !disabled && selectedLayout === value ? "bg-primary/10" : "bg-muted",
                     )}>
-                      <Icon className={cn("size-4", selectedLayout === value ? "text-primary" : "text-muted-foreground")} />
+                      <Icon className={cn("size-4", !disabled && selectedLayout === value ? "text-primary" : "text-muted-foreground")} />
                     </div>
                     <div>
-                      <p className={cn("text-sm font-semibold", selectedLayout === value ? "text-foreground" : "text-muted-foreground")}>
+                      <p className={cn("text-sm font-semibold", !disabled && selectedLayout === value ? "text-foreground" : "text-muted-foreground")}>
                         {label}
                       </p>
                       <p className="text-xs text-muted-foreground leading-tight mt-0.5">

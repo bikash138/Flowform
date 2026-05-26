@@ -120,6 +120,7 @@ interface FormEditorState {
   setDesignPanelOpen: (open: boolean) => void;
   setHoverTheme: (theme: FormTheme | null) => void;
   updateThemeLocally: (theme: FormTheme) => void;
+  markSoftChange: () => void;
 
   resetEditor: () => void;
 }
@@ -192,16 +193,24 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   initializeEditor: (form, content) => {
     const firstPageId = content.pages.length > 0 ? content.pages[0]!.id : null;
+    // Strip any legacy base64 data URLs that were stored by the old FileReader code.
+    // These can be several MB in size and must never be re-synced to the server.
+    const sanitizedContent: typeof content = {
+      ...content,
+      pages: content.pages.map((page) =>
+        page.coverImage?.startsWith("data:") ? { ...page, coverImage: null } : page,
+      ),
+    };
     set({
       form,
-      content,
+      content: sanitizedContent,
       isInitialized: true,
       editVersion: form.editVersion,
       syncStatus: "synced",
       publishChangeType: "none",
       activePageId: firstPageId,
       selectedItem: null,
-      ...computePageNavState(content.pages, firstPageId),
+      ...computePageNavState(sanitizedContent.pages, firstPageId),
     });
   },
 
@@ -560,6 +569,14 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
     set(
       produce<FormEditorState>((state) => {
         if (state.form) state.form.theme = theme;
+        markChange(state, "soft");
+      }),
+    ),
+
+  markSoftChange: () =>
+    set(
+      produce<FormEditorState>((state) => {
+        markChange(state, "soft");
       }),
     ),
 }));

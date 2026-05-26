@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch --env-file=.env src/index.ts",
     "build": "tsdown",
-    "start": "node dist/index.js",
+    "start": "tsx watch --env-file=.env src/index.ts",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {

@@ -16,6 +16,7 @@ import { useWorkspaces } from "@/hooks/user/use-workspace-core";
 import type { RouterOutputs, RouterInputs } from "@flowform/trpc/client";
 
 type PlanData = RouterOutputs["billing"]["getPlans"][number];
+type Plans = RouterOutputs["billing"]["getPlans"];
 type PlanId = RouterInputs["billing"]["activatePlan"]["planId"];
 type WorkspaceSummary = RouterOutputs["workspace"]["core"]["getUserWorkspaces"][number];
 
@@ -263,7 +264,7 @@ function PlansSkeleton() {
   );
 }
 
-function FreeView({ plans, onSelect }: { plans: PlanData[]; onSelect: (plan: PlanData) => void }) {
+function FreeView({ plans, onSelect }: { plans: Plans; onSelect: (plan: PlanData) => void }) {
   const upgradePlans = plans.filter((p) => p.id !== "FREE");
   return (
     <div className="grid grid-cols-2 gap-3">
@@ -292,7 +293,7 @@ function FreeView({ plans, onSelect }: { plans: PlanData[]; onSelect: (plan: Pla
   );
 }
 
-function ProView({ plans, onSelect }: { plans: PlanData[]; onSelect: (plan: PlanData) => void }) {
+function ProView({ plans, onSelect }: { plans: Plans; onSelect: (plan: PlanData) => void }) {
   const proPlan = plans.find((p) => p.id === "PRO");
   const proMaxPlan = plans.find((p) => p.id === "PRO_MAX");
 
@@ -330,7 +331,7 @@ function ProView({ plans, onSelect }: { plans: PlanData[]; onSelect: (plan: Plan
   );
 }
 
-function ProMaxView({ plans, onClose }: { plans: PlanData[]; onClose: () => void }) {
+function ProMaxView({ plans, onClose }: { plans: Plans; onClose: () => void }) {
   const proMaxPlan = plans.find((p) => p.id === "PRO_MAX");
 
   if (!proMaxPlan) return null;

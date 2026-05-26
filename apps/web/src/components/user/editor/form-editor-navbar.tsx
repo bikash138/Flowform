@@ -296,7 +296,7 @@ export function FormBuilderNavbar({ workspaceId, formTitle }: FormBuilderNavbarP
     : "Make this form live";
 
   function handlePublishClick() {
-    if (!form || !canPublish) return;
+    if (!form) return;
     setPublishConfirmOpen(true);
   }
 
@@ -354,7 +354,7 @@ export function FormBuilderNavbar({ workspaceId, formTitle }: FormBuilderNavbarP
                   size="sm"
                   className={cn("gap-1.5", !canPublish && "opacity-60")}
                   onClick={handlePublishClick}
-                  disabled={isPublishing || !canPublish}
+                  disabled={isPublishing}
                 >
                   {isPublishing ? (
                     <Loader2 className="size-3.5 animate-spin" />

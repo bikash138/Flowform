@@ -120,7 +120,7 @@ export type FormFont = {
 
 export type FormTheme = {
   primaryColor: string;
-  backgroundColor: string;      // form card background
+  backgroundColor: string; // form card background
   pageBackgroundColor?: string; // outer page background (behind the card)
   accentColor: string;
 
@@ -134,16 +134,16 @@ export type FormTheme = {
   inputTextColor?: string;
 
   // Choice fields (radio, checkbox)
-  choiceColor?: string;          // unselected option bg
-  choiceSelectedColor?: string;  // selected option bg
+  choiceColor?: string; // unselected option bg
+  choiceSelectedColor?: string; // selected option bg
 
   // Rating
   starColor?: string;
 
   // Border radius
-  borderRadius: "sharp" | "rounded" | "pill";  // card / global
+  borderRadius: "sharp" | "rounded" | "pill"; // card / global
   buttonRadius?: "sharp" | "rounded" | "pill"; // Next / Submit / Start buttons
-  inputRadius?: "sharp" | "rounded" | "pill";  // input / select / textarea
+  inputRadius?: "sharp" | "rounded" | "pill"; // input / select / textarea
 
   backgroundImage?: string | null;
 };
@@ -158,10 +158,10 @@ export type FormSettings = {
   formLayout: "vertical" | "conversational";
 
   //PRO
-  closeAtDays: number;            // days after publish before form closes, FREE locked to 10
-  languages: string[];            // enabled languages, e.g. ["en", "fr", "es"] — PRO and above can add more
-  defaultLanguage: string;        // language the form renders in by default, FREE locked to "en"
-  responseLimit: number;          // per-form response cap, FREE locked to plan's monthlyResponseLimit
+  closeAtDays: number; // days after publish before form closes, FREE locked to 10
+  languages: string[]; // enabled languages, e.g. ["en", "fr", "es"] — PRO and above can add more
+  defaultLanguage: string; // language the form renders in by default, FREE locked to "en"
+  responseLimit: number; // per-form response cap, FREE locked to plan's monthlyResponseLimit
   navbar:
     | { showBranding: false }
     | { showBranding: true; logoUrl: string; brandName: string };
@@ -173,7 +173,7 @@ export type FormSettings = {
   } | null;
 
   //PRO_MAX
-  removeWatermark: boolean;       // hide "Powered by Flowform" footer
+  removeWatermark: boolean; // hide "Powered by Flowform" footer
   confirmationEmail?: {
     templateId: 1 | 2 | 3 | 4 | 5 | 6;
     subject: string;
@@ -194,7 +194,9 @@ export type AnswerEntry = {
 export const form = pgTable(
   "form",
   {
-    id: text("id").primaryKey().$defaultFn(() => `frm_${nanoid(10)}`),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => `frm_${nanoid(10)}`),
     workspaceId: text("workspace_id")
       .notNull()
       .references(() => workspace.id),
@@ -232,7 +234,9 @@ export const form = pgTable(
 export const formPublishSnapshot = pgTable(
   "form_publish_snapshot",
   {
-    id: text("id").primaryKey().$defaultFn(() => `snp_${nanoid(10)}`),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => `snp_${nanoid(10)}`),
     formId: text("form_id")
       .notNull()
       .references(() => form.id),
@@ -251,7 +255,9 @@ export const formPublishSnapshot = pgTable(
 export const formResponse = pgTable(
   "form_response",
   {
-    id: text("id").primaryKey().$defaultFn(() => uuidv7()),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => uuidv7()),
     formId: text("form_id")
       .notNull()
       .references(() => form.id),
@@ -283,7 +289,9 @@ export const formResponse = pgTable(
 );
 
 export const formAnalyticsSummary = pgTable("form_analytics_summary", {
-  id: text("id").primaryKey().$defaultFn(() => `fas_${nanoid(10)}`),
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => `fas_${nanoid(10)}`),
   formId: text("form_id")
     .notNull()
     .unique()

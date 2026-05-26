@@ -59,7 +59,7 @@ const PlanFeatureItemSchema = z.object({
 const PlanFeatureGroupSchema = z.object({
   value: z.string(),
   label: z.string(),
-  items: z.array(PlanFeatureItemSchema),
+  items: z.array(PlanFeatureItemSchema).readonly(),
 });
 
 export const PlanCatalogItemSchema = z.object({
@@ -68,10 +68,10 @@ export const PlanCatalogItemSchema = z.object({
   price: z.string(),
   period: z.string(),
   tagline: z.string(),
-  features: z.array(PlanFeatureGroupSchema),
+  features: z.array(PlanFeatureGroupSchema).readonly(),
 });
 
-export const PlanCatalogOutputSchema = z.array(PlanCatalogItemSchema);
+export const PlanCatalogOutputSchema = z.array(PlanCatalogItemSchema).readonly();
 
 export type ActivatePlanInput = z.infer<typeof ActivatePlanInputSchema>;
 export type GetRemainingQuotaInput = z.infer<typeof GetRemainingQuotaInputSchema>;

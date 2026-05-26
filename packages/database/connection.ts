@@ -26,7 +26,9 @@ export async function disconnectDB(): Promise<void> {
   g.__flowform_db__ = undefined;
 }
 
-export type Tx = Parameters<Parameters<NodePgDatabase<Schema>["transaction"]>[0]>[0];
+export type Tx = Parameters<
+  Parameters<NodePgDatabase<Schema>["transaction"]>[0]
+>[0];
 
 export function getDb(): NodePgDatabase<Schema> {
   if (!g.__flowform_db__) {

@@ -250,13 +250,11 @@ export function FormSettingsModal({ open, onOpenChange }: FormSettingsModalProps
       setAccessCode("");
       setAccessCodeChanged(false);
       setNavbarLogoFile(null);
-      validationForm.reset(
-        {
-          redirectUrl: newDraft.redirectOnComplete?.url ?? "",
-          redirectLabel: newDraft.redirectOnComplete?.label ?? "",
-          brandName: newDraft.navbar.showBranding ? newDraft.navbar.brandName : "",
-        },
-      );
+      validationForm.reset({
+        redirectUrl: newDraft.redirectOnComplete?.url ?? "",
+        redirectLabel: newDraft.redirectOnComplete?.label ?? "",
+        brandName: newDraft.navbar.showBranding ? (newDraft.navbar.brandName ?? "") : "",
+      });
     }
   }, [open, form?.settings, form?.slug]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -310,7 +308,9 @@ export function FormSettingsModal({ open, onOpenChange }: FormSettingsModalProps
         }
         finalDraft = {
           ...finalDraft,
-          navbar: { ...finalDraft.navbar, logoUrl: publicUrl },
+          navbar: finalDraft.navbar.showBranding
+            ? { ...finalDraft.navbar, logoUrl: publicUrl }
+            : finalDraft.navbar,
         };
         setNavbarLogoFile(null);
       } catch {
@@ -814,7 +814,7 @@ export function FormSettingsModal({ open, onOpenChange }: FormSettingsModalProps
                         <SettingRow label="Style" description="Visual style of the progress indicator">
                           <Select
                             value={draft.progressBar.style}
-                            onValueChange={(v) => setNested("progressBar", "style", v)}
+                            onValueChange={(v) => set("progressBar", { enabled: true, style: v as "bar" | "steps" | "percentage" })}
                           >
                             <SelectTrigger className="h-8 w-36 text-sm">
                               <SelectValue />
@@ -933,7 +933,7 @@ export function FormSettingsModal({ open, onOpenChange }: FormSettingsModalProps
                       next = [...selectedLangs, code];
                     }
                     set("languages", next);
-                    if (!next.includes(draft.defaultLanguage)) {
+                    if (!next.includes(draft!.defaultLanguage)) {
                       set("defaultLanguage", next[0]!);
                     }
                   }

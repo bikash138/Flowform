@@ -16,21 +16,21 @@ import { workspace } from "./workspace.model";
 
 export type PlanFeatures = {
   //Numeric quotas
-  monthlyResponseLimit: number;      // workspace-wide cap per calendar month
-  formLimit: number;                 // max forms per workspace
-  teamMemberLimit: number;           // max workspace members
-  
-  //PRO
-  multiLanguage: boolean;            // set form language (non-English)
-  customCloseDate: boolean;          // edit closeAt — FREE gets auto 10-day close
-  customBranding: boolean;           // edit navbar logo + brand name
-  customSlug: boolean;               // vanity URL slugs for forms
-  redirectOnComplete: boolean;       // redirect button on end page
-  advancedAnalytics: boolean;        // question-level stats, drop-off, device breakdown
+  monthlyResponseLimit: number; // workspace-wide cap per calendar month
+  formLimit: number; // max forms per workspace
+  teamMemberLimit: number; // max workspace members
 
-  //PRO_MAX 
-  removeWatermark: boolean;          // hide "Powered by Flowform" footer
-  confirmationEmail: boolean;        // send branded confirmation email to respondent
+  //PRO
+  multiLanguage: boolean; // set form language (non-English)
+  customCloseDate: boolean; // edit closeAt — FREE gets auto 10-day close
+  customBranding: boolean; // edit navbar logo + brand name
+  customSlug: boolean; // vanity URL slugs for forms
+  redirectOnComplete: boolean; // redirect button on end page
+  advancedAnalytics: boolean; // question-level stats, drop-off, device breakdown
+
+  //PRO_MAX
+  removeWatermark: boolean; // hide "Powered by Flowform" footer
+  confirmationEmail: boolean; // send branded confirmation email to respondent
 };
 
 export const planIdEnum = pgEnum("plan_id", ["FREE", "PRO", "PRO_MAX"]);
@@ -58,7 +58,9 @@ export const plan = pgTable("plan", {
 export const workspacePlan = pgTable(
   "workspace_plan",
   {
-    id: text("id").primaryKey().$defaultFn(() => `wpl_${nanoid(10)}`),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => `wpl_${nanoid(10)}`),
     workspaceId: text("workspace_id")
       .notNull()
       .unique()
@@ -86,11 +88,13 @@ export const workspacePlan = pgTable(
   ],
 );
 
-//Workspace Usage 
+//Workspace Usage
 export const workspaceUsage = pgTable(
   "workspace_usage",
   {
-    id: text("id").primaryKey().$defaultFn(() => `wus_${nanoid(10)}`),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => `wus_${nanoid(10)}`),
     workspaceId: text("workspace_id")
       .notNull()
       .references(() => workspace.id),

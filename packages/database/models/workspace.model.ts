@@ -20,7 +20,9 @@ export const workspaceInviteStatusEnum = pgEnum("workspace_invite_status", [
 ]);
 
 export const workspace = pgTable("workspace", {
-  id: text("id").primaryKey().$defaultFn(() => `ws_${nanoid(10)}`),
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => `ws_${nanoid(10)}`),
   title: text("title").notNull(),
   logo: text("logo").notNull(),
   ownerId: text("owner_id")
@@ -36,7 +38,9 @@ export const workspace = pgTable("workspace", {
 export const workspaceMember = pgTable(
   "workspace_member",
   {
-    id: text("id").primaryKey().$defaultFn(() => `wm_${nanoid(10)}`),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => `wm_${nanoid(10)}`),
     userId: text("user_id")
       .notNull()
       .references(() => user.id),
@@ -58,7 +62,9 @@ export const workspaceMember = pgTable(
 export const workspaceInvite = pgTable(
   "workspace_invite",
   {
-    id: text("id").primaryKey().$defaultFn(() => `wi_${nanoid(10)}`),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => `wi_${nanoid(10)}`),
     email: text("email").notNull(),
     workspaceId: text("workspace_id")
       .notNull()
@@ -76,7 +82,10 @@ export const workspaceInvite = pgTable(
   },
   (t) => [
     index("workspace_invite_token_idx").on(t.tokenHash),
-    uniqueIndex("workspace_invite_email_workspace_idx").on(t.email, t.workspaceId),
+    uniqueIndex("workspace_invite_email_workspace_idx").on(
+      t.email,
+      t.workspaceId,
+    ),
   ],
 );
 

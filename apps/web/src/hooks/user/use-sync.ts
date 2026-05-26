@@ -1,8 +1,22 @@
 import { useEffect, useRef } from "react";
 import { useFormEditorStore } from "@/store/use-form-editor-store";
 import { useSyncContent } from "@/hooks/user/use-form";
+import type { FormContent } from "@flowform/database/models";
 
 const DEBOUNCE_MS = 2000;
+
+// Strip legacy base64 data URLs from coverImage before syncing.
+// These were stored by the old FileReader code and must never reach the server.
+function sanitizeContent(content: FormContent): FormContent {
+  const hasBase64 = content.pages.some((p) => p.coverImage?.startsWith("data:"));
+  if (!hasBase64) return content;
+  return {
+    ...content,
+    pages: content.pages.map((page) =>
+      page.coverImage?.startsWith("data:") ? { ...page, coverImage: null } : page,
+    ),
+  };
+}
 
 export function useSync(formId: string | null, workspaceId: string | null): void {
   const { mutateAsync: syncContent } = useSyncContent();
@@ -28,7 +42,7 @@ export function useSync(formId: string | null, workspaceId: string | null): void
           const result = await syncContent({
             formId,
             workspaceId,
-            draftContent: snapshot.content,
+            draftContent: sanitizeContent(snapshot.content),
             editVersion: snapshot.editVersion,
           });
 
@@ -79,13 +93,15 @@ export function useSync(formId: string | null, workspaceId: string | null): void
 
     const handleVisibilityChange = () => {
       if (document.visibilityState !== "hidden") return;
+      // Ignore brief visibility changes from native dialogs (file picker, etc.)
+      if (document.hasFocus()) return;
       const { syncStatus, content, editVersion } = useFormEditorStore.getState();
       if (syncStatus !== "dirty" || !content) return;
 
       if (timerRef.current) clearTimeout(timerRef.current);
       useFormEditorStore.getState().setSyncStatus("saving");
 
-      syncContent({ formId, workspaceId, draftContent: content, editVersion })
+      syncContent({ formId, workspaceId, draftContent: sanitizeContent(content), editVersion })
         .then((result) => {
           useFormEditorStore.getState().syncSuccess(result.editVersion);
         })

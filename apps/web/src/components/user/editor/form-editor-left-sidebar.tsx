@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Plus,
@@ -39,6 +40,7 @@ import {
 } from "@/components/ui/tooltip";
 import { AddContentModal } from "@/components/modals/add-content-modal";
 import { DeletePageModal } from "@/components/modals/delete-page-modal";
+import { useDeleteCoverImage } from "@/hooks/user/use-form";
 import {
   DndContext,
   PointerSensor,
@@ -246,6 +248,8 @@ function SortablePage({
 // ─── Main sidebar ───────────────────────────────────────────────────────────
 
 export function FormPagesSidebar() {
+  const { workspaceId, formId } = useParams<{ workspaceId: string; formId: string }>();
+
   const content            = useFormEditorStore((s) => s.content);
   const activePageId       = useFormEditorStore((s) => s.activePageId);
   const selectedItem       = useFormEditorStore((s) => s.selectedItem);
@@ -256,6 +260,8 @@ export function FormPagesSidebar() {
   const deletePage         = useFormEditorStore((s) => s.deletePage);
   const reorderPages       = useFormEditorStore((s) => s.reorderPages);
   const reorderQuestions   = useFormEditorStore((s) => s.reorderQuestions);
+
+  const { mutate: deleteCoverImage } = useDeleteCoverImage();
 
   const pages = content?.pages ?? [];
   const formLayout = (form?.settings as FormSettings | undefined)?.formLayout ?? "vertical";
@@ -427,6 +433,10 @@ export function FormPagesSidebar() {
           onOpenChange={(open) => { if (!open) setDeletePageId(null); }}
           onConfirm={() => {
             if (deletePageId) {
+              const page = pages.find((p) => p.id === deletePageId);
+              if (page?.coverImage) {
+                deleteCoverImage({ formId, pageId: deletePageId, workspaceId });
+              }
               deletePage(deletePageId);
               setDeletePageId(null);
             }

@@ -43,6 +43,19 @@ export const generateUploadUrl = async (
   return { uploadUrl, publicUrl, key };
 };
 
+export const generateUploadUrlForKey = async (key: string): Promise<UploadUrlResult> => {
+  const command = new PutObjectCommand({
+    Bucket: BUCKET,
+    Key: key,
+    ContentType: "image/webp",
+  });
+
+  const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 });
+  const publicUrl = `https://${BUCKET}.t3.tigrisfiles.io/${key}?v=${Date.now()}`;
+
+  return { uploadUrl, publicUrl, key };
+};
+
 export const deleteImageFromS3 = async (key: string): Promise<void> => {
   await s3Client.send(
     new DeleteObjectCommand({ Bucket: BUCKET, Key: key }),

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { ChevronDown, Globe } from "lucide-react";
 import { SignupPreviewCarousel } from "@/components/auth/signup-preview-carousel";
 import { SignupSwappableSection } from "@/components/auth/email-signup-section";
@@ -62,7 +63,9 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
               {"\u00A0"}workflows.
             </p>
 
-            <SignupSwappableSection isEmailMode={isEmailMode} />
+            <Suspense>
+              <SignupSwappableSection isEmailMode={isEmailMode} />
+            </Suspense>
           </div>
         </main>
       </div>
