@@ -112,16 +112,18 @@ function createAuth() {
     },
     trustedOrigins: [
       frontendUrl,
-      // Also trust the bare domain (without www) and vice-versa
       frontendUrl.startsWith("https://www.")
         ? frontendUrl.replace("https://www.", "https://")
         : frontendUrl.replace("https://", "https://www."),
     ],
     advanced: {
-      crossSubdomainCookies: {
-        enabled: true,
-        // Strip the subdomain — covers api.flowform.in + www.flowform.in
-        domain: frontendUrl.replace(/^https?:\/\/(www\.)?/, ""),
+      useSecureCookies: baseURL.startsWith("https://"),
+      defaultCookieAttributes: {
+        domain: `.${frontendUrl.replace(/^https?:\/\/(www\.)?/, "")}`,
+        secure: baseURL.startsWith("https://"),
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
       },
     },
     session: {

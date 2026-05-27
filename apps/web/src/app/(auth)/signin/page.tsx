@@ -29,7 +29,6 @@ function SignInContent() {
         callbackURL: callbackUrl || undefined,
       });
 
-      // Only manually redirect if Better Auth isn't handling a callbackUrl
       if (!callbackUrl && result.data) {
         const dest = result.data.user.personalWorkspaceId
           ? `/ws/${result.data.user.personalWorkspaceId}`
