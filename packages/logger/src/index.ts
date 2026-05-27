@@ -1,7 +1,7 @@
 import pino from "pino";
 import { env } from "@flowform/env";
 
-const isDev = env.node.env === "development";
+const isDev = true;
 
 export const logger = pino({
   level: env.node.logLevel,
