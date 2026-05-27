@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/utils/trpc";
 import { toast } from "sonner";
+import { parseErrorMessage } from "@/utils/parse-error-message";
 
 export const useGetWorkspaceMembers = (workspaceId: string) => {
   const trpc = useTRPC();
@@ -28,7 +29,7 @@ export const useUpdateMemberRole = () => {
       });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to update role");
+      toast.error(parseErrorMessage(error, "Failed to update role"));
     },
   });
 };
@@ -48,7 +49,7 @@ export const useRemoveWorkspaceMember = () => {
       });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to remove member");
+      toast.error(parseErrorMessage(error, "Failed to remove member"));
     },
   });
 };
@@ -68,7 +69,7 @@ export const useLeaveWorkspace = (workspaceId: string) => {
       });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to leave workspace");
+      toast.error(parseErrorMessage(error, "Failed to leave workspace"));
     },
   });
 };

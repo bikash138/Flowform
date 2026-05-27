@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useFormEditorStore } from "@/store/use-form-editor-store";
+import { useWorkspacePlan } from "@/hooks/user/use-billing";
+import { Lock } from "lucide-react";
 
 export function NavbarLinks() {
   const { workspaceId, formId } = useParams<{
@@ -12,18 +14,20 @@ export function NavbarLinks() {
   }>();
   const pathname = usePathname();
   const isPublished = useFormEditorStore((s) => (s.form?.publishVersion ?? 0) > 0);
+  const { data: plan } = useWorkspacePlan(workspaceId);
+  const isFree = (plan?.planId ?? "FREE") === "FREE";
 
   const base = `/ws/${workspaceId}/f/${formId}`;
 
   const navLinks = [
-    { label: "Editor", href: `${base}/editor` },
+    { label: "Editor", href: `${base}/editor`, locked: false },
     ...(isPublished
       ? [
-          { label: "Analytics", href: `${base}/analytics` },
-          { label: "Results", href: `${base}/result` },
+          { label: "Analytics", href: `${base}/analytics`, locked: isFree },
+          { label: "Results", href: `${base}/result`, locked: false },
         ]
       : []),
-    { label: "Share", href: `${base}/share` },
+    { label: "Share", href: `${base}/share`, locked: false },
   ];
 
   return (
@@ -36,13 +40,16 @@ export function NavbarLinks() {
             key={link.label}
             href={link.href}
             className={cn(
-              "relative flex items-center px-3 h-12 text-sm font-medium transition-colors",
+              "relative flex items-center gap-1.5 px-3 h-12 text-sm font-medium transition-colors",
               isActive
                 ? "text-foreground"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
             {link.label}
+            {link.locked && (
+              <Lock className="size-3 text-muted-foreground/60 shrink-0" />
+            )}
             {isActive && (
               <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-foreground rounded-full" />
             )}

@@ -10,6 +10,7 @@ import {
   PublishFormInputSchema,
   PatchPublishInputSchema,
   ArchiveFormInputSchema,
+  UnarchiveFormInputSchema,
   DeleteFormInputSchema,
   DuplicateFormInputSchema,
   SetAccessCodeInputSchema,
@@ -99,6 +100,14 @@ export const formRouter = router({
     .input(ArchiveFormInputSchema)
     .output(FormDetailSchema)
     .mutation(({ input, ctx }) => formService.archiveForm(input, ctx.workspaceId)),
+
+  unarchiveForm: workspaceProcedure
+    .meta({
+      openapi: { method: "POST", path: getPath("/:formId/unarchive"), tags: TAGS },
+    })
+    .input(UnarchiveFormInputSchema)
+    .output(FormDetailSchema)
+    .mutation(({ input, ctx }) => formService.unarchiveForm(input, ctx.workspaceId)),
 
   duplicateForm: workspaceProcedure
     .meta({

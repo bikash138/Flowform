@@ -1,4 +1,93 @@
+"use client";
+
 import Link from "next/link";
+import Image from "next/image";
+import { useRef, useState, useCallback } from "react";
+import Autoplay from "embla-carousel-autoplay";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from "@/components/ui/carousel";
+
+const SLIDES = [
+  { src: "/editor.png",    alt: "Flowform form editor",    label: "Form Editor"   },
+  { src: "/analytics.png", alt: "Flowform analytics",      label: "Analytics"     },
+];
+
+function HeroCarousel() {
+  const plugin = useRef(Autoplay({ delay: 3500, stopOnInteraction: true }));
+  const [api, setApi] = useState<CarouselApi>();
+  const [current, setCurrent] = useState(0);
+
+  const onSetApi = useCallback((newApi: CarouselApi) => {
+    if (!newApi) return;
+    setApi(newApi);
+    newApi.on("select", () => setCurrent(newApi.selectedScrollSnap()));
+  }, []);
+
+  return (
+    <div className="relative w-full px-6 max-w-5xl mx-auto pb-0 z-10">
+      <div className="relative rounded-2xl overflow-hidden border border-white/6 shadow-[0_0_100px_rgba(0,0,0,0.6)]">
+        {/* Browser chrome */}
+        <div className="flex items-center gap-2 px-5 py-3.5 border-b border-white/6 bg-[#0E0A07]">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
+          <div className="mx-auto w-52 h-5 rounded-md bg-white/10" />
+        </div>
+
+        {/* Carousel */}
+        <Carousel
+          setApi={onSetApi}
+          opts={{ loop: true }}
+          plugins={[plugin.current]}
+          className="w-full"
+        >
+          <CarouselContent className="ml-0">
+            {SLIDES.map((slide) => (
+              <CarouselItem key={slide.src} className="pl-0">
+                <div className="relative w-full aspect-video bg-[#1C1610]">
+                  <Image
+                    src={slide.src}
+                    alt={slide.alt}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 90vw, 1024px"
+                    className="object-cover object-top"
+                    priority
+                  />
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
+
+        {/* Dot indicators */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+          {SLIDES.map((slide, i) => (
+            <button
+              key={slide.src}
+              type="button"
+              aria-label={`Go to slide ${i + 1}`}
+              onClick={() => api?.scrollTo(i)}
+              className={`rounded-full transition-all duration-300 ${
+                i === current
+                  ? "w-5 h-1.5 bg-[#D9B38C]"
+                  : "w-1.5 h-1.5 bg-white/30 hover:bg-white/50"
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Slide label */}
+        <div className="absolute bottom-3 right-4 text-[10px] font-semibold tracking-[0.14em] uppercase text-white/30">
+          {SLIDES[current]?.label}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function Hero() {
   return (
@@ -68,33 +157,10 @@ export function Hero() {
           </p>
         </div>
 
-        {/* Video placeholder */}
-        <div className="relative w-full px-6 max-w-5xl mx-auto pb-0 z-10">
-          <div className="relative rounded-2xl overflow-hidden border border-white/[0.06] shadow-[0_0_100px_rgba(0,0,0,0.6)]">
-            {/* Browser chrome */}
-            <div className="flex items-center gap-2 px-5 py-3.5 border-b border-white/[0.06] bg-[#0E0A07]">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
-              <span className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]" />
-              <span className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
-              <div className="mx-auto w-52 h-5 rounded-md bg-white/10" />
-            </div>
-            {/* Video area */}
-            <div className="aspect-video w-full flex items-center justify-center bg-[#1C1610]">
-              <div className="flex flex-col items-center gap-4 select-none">
-                <div className="w-16 h-16 rounded-full border border-[#D9B38C]/30 flex items-center justify-center bg-[#D9B38C]/10 hover:bg-[#D9B38C]/20 transition-colors cursor-pointer">
-                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                    <path d="M7 5L17 11L7 17V5Z" fill="#D9B38C" opacity="0.8" />
-                  </svg>
-                </div>
-                <span className="text-[#D9B38C]/30 text-[0.65rem] font-semibold tracking-[0.18em] uppercase">
-                  Demo video
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Screenshot carousel */}
+        <HeroCarousel />
 
-        {/* Gradient beneath video */}
+        {/* Gradient beneath carousel */}
         <div
           aria-hidden
           className="pointer-events-none w-full h-[480px] -mt-80"

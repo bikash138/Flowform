@@ -3,7 +3,6 @@
 import { use, useState } from "react";
 import { useFormEditorStore } from "@/store/use-form-editor-store";
 import { useListResponses } from "@/hooks/user/use-analytics";
-import { useWorkspacePlan } from "@/hooks/user/use-billing";
 import { useTRPCClient } from "@/utils/trpc";
 import {
   Sheet,
@@ -29,12 +28,8 @@ import {
   Mail,
   Clock,
   Hash,
-  Gem,
-  Check,
-  TableIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import { PlansModal } from "@/components/modals/plans-modal";
 import type { FormSettings } from "@flowform/database/models";
 import type { ResponseColumn } from "@flowform/services/analytics";
 
@@ -359,102 +354,6 @@ function ResponseTable({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-// ─── Upgrade gate ─────────────────────────────────────────────────────────────
-
-function UpgradeGate({ planId }: { planId: string }) {
-  const [plansOpen, setPlansOpen] = useState(false);
-
-  const features = [
-    "Paginated table of every individual response",
-    "Click any row to see the full answer breakdown",
-    "Collected email addresses per respondent",
-    "Filter by form version",
-    "Export all responses as a raw CSV file",
-  ];
-
-  return (
-    <>
-      <div className="relative rounded-xl overflow-hidden">
-        {/* Blurred skeleton preview */}
-        <div className="pointer-events-none select-none blur-[3px] opacity-50 space-y-4 p-1">
-          {/* Toolbar skeleton */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-8 w-28 rounded-md" />
-              <Skeleton className="h-8 w-20 rounded-md" />
-            </div>
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-8 w-28 rounded-md" />
-            </div>
-          </div>
-
-          {/* Table skeleton */}
-          <div className="rounded-xl border border-border overflow-hidden bg-background">
-            {/* Header */}
-            <div className="flex gap-4 px-4 py-2.5 bg-muted/30 border-b">
-              {[3, 20, 18, 22, 20, 17].map((w, i) => (
-                <Skeleton key={i} className="h-3 rounded" style={{ width: `${w}%` }} />
-              ))}
-            </div>
-            {/* Rows */}
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex gap-4 px-4 py-3 border-b last:border-b-0"
-                style={{ opacity: 1 - i * 0.08 }}
-              >
-                {[3, 20, 18, 22, 20, 17].map((w, j) => (
-                  <Skeleton key={j} className="h-3 rounded" style={{ width: `${w}%` }} />
-                ))}
-              </div>
-            ))}
-          </div>
-
-          {/* Pagination skeleton */}
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-4 w-24" />
-            <div className="flex gap-1">
-              <Skeleton className="size-7 rounded-md" />
-              <Skeleton className="size-7 rounded-md" />
-            </div>
-          </div>
-        </div>
-
-        {/* Upgrade overlay */}
-        <div className="absolute inset-0 flex items-center justify-center p-4">
-          <div className="bg-background/95 backdrop-blur-sm border border-border rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
-            <div className="inline-flex items-center justify-center size-12 rounded-full bg-primary/10 mb-4">
-              <TableIcon className="size-6 text-primary" />
-            </div>
-            <h3 className="text-base font-bold mb-1.5">Unlock Response Data</h3>
-            <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
-              Upgrade to <span className="font-semibold text-foreground">Pro</span> to
-              view, explore, and export every response your form collects.
-            </p>
-
-            <ul className="space-y-2 mb-6 text-left">
-              {features.map((f) => (
-                <li key={f} className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <Check className="size-3.5 text-primary shrink-0 mt-0.5" />
-                  {f}
-                </li>
-              ))}
-            </ul>
-
-            <Button className="w-full gap-2" onClick={() => setPlansOpen(true)}>
-              <Gem className="size-4" />
-              Upgrade to Pro
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <PlansModal open={plansOpen} onOpenChange={setPlansOpen} currentPlanId={planId} />
-    </>
-  );
-}
-
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
 type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
 
@@ -468,9 +367,6 @@ export default function ResultPage({
   const publishVersion = form?.publishVersion ?? 0;
   const collectEmail =
     (form?.settings as FormSettings | undefined)?.collectEmail ?? false;
-
-  const { data: plan, isLoading: planLoading } = useWorkspacePlan(workspaceId);
-  const isFree = !planLoading && (plan?.planId ?? "FREE") === "FREE";
 
   const [selectedVersion, setSelectedVersion] = useState(
     () => (publishVersion > 0 ? publishVersion : 1),
@@ -536,16 +432,6 @@ export default function ResultPage({
           <p className="text-sm text-muted-foreground">
             Publish your form to start collecting responses.
           </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isFree) {
-    return (
-      <div className="w-full h-full overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <UpgradeGate planId={plan?.planId ?? "FREE"} />
         </div>
       </div>
     );

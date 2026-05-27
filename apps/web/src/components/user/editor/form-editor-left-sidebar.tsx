@@ -59,17 +59,17 @@ import type { FormSettings } from "@flowform/database/models";
 
 const TYPE_ICONS: Record<QuestionType, React.ReactNode> = {
   short_text: <Type className="size-3.5" />,
-  long_text:  <AlignLeft className="size-3.5" />,
-  email:      <Mail className="size-3.5" />,
-  number:     <Hash className="size-3.5" />,
-  phone:      <Phone className="size-3.5" />,
-  url:        <Link2 className="size-3.5" />,
-  select:     <List className="size-3.5" />,
-  radio:      <CircleDot className="size-3.5" />,
-  checkbox:   <CheckSquare className="size-3.5" />,
-  rating:     <Star className="size-3.5" />,
-  date:       <Calendar className="size-3.5" />,
-  yes_no:     <ToggleLeft className="size-3.5" />,
+  long_text: <AlignLeft className="size-3.5" />,
+  email: <Mail className="size-3.5" />,
+  number: <Hash className="size-3.5" />,
+  phone: <Phone className="size-3.5" />,
+  url: <Link2 className="size-3.5" />,
+  select: <List className="size-3.5" />,
+  radio: <CircleDot className="size-3.5" />,
+  checkbox: <CheckSquare className="size-3.5" />,
+  rating: <Star className="size-3.5" />,
+  date: <Calendar className="size-3.5" />,
+  yes_no: <ToggleLeft className="size-3.5" />,
 };
 
 // ─── Sortable question item ─────────────────────────────────────────────────
@@ -87,8 +87,14 @@ function SortableQuestion({
   isSelected: boolean;
   onSelect: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -101,7 +107,7 @@ function SortableQuestion({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center gap-1 rounded-md text-xs transition-all group/q",
+        "flex items-center gap-1 rounded-md text-xs transition-all group/q overflow-hidden",
         isSelected
           ? "bg-primary/10 text-primary"
           : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -118,12 +124,19 @@ function SortableQuestion({
       </button>
       <button
         onClick={onSelect}
-        className="flex items-center gap-2 flex-1 min-w-0 py-1.5 pr-2 text-left"
+        className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden py-1.5 pr-2 text-left"
       >
-        <span className={cn("shrink-0", isSelected ? "text-primary" : "text-muted-foreground")}>
+        <span
+          className={cn(
+            "shrink-0",
+            isSelected ? "text-primary" : "text-muted-foreground",
+          )}
+        >
           {TYPE_ICONS[type] ?? <FileText className="size-3.5" />}
         </span>
-        <span className="truncate flex-1">{label || "Untitled question"}</span>
+        <span className="flex-1">
+          {label.length > 25 ? `${label.slice(0, 25)}…` : label || "Untitled question"}
+        </span>
       </button>
     </div>
   );
@@ -140,7 +153,7 @@ function SortablePage({
   onActivate,
   onAddQuestion,
   onDeletePage,
-  showDelete,
+  canDelete,
   isConversational,
   children,
 }: {
@@ -152,12 +165,18 @@ function SortablePage({
   onActivate: () => void;
   onAddQuestion: () => void;
   onDeletePage: () => void;
-  showDelete: boolean;
+  canDelete: boolean;
   isConversational: boolean;
   children: React.ReactNode;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: page.id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: page.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -199,7 +218,7 @@ function SortablePage({
           </CollapsibleTrigger>
 
           <button
-            className="flex-1 flex items-center text-sm font-semibold py-2 text-left gap-2"
+            className="flex-1 min-w-0 flex items-center text-sm font-semibold py-2 text-left gap-2"
             onClick={onActivate}
           >
             Page {index + 1}
@@ -214,7 +233,7 @@ function SortablePage({
             <TooltipTrigger asChild>
               <button
                 onClick={onAddQuestion}
-                className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-150 opacity-0 group-hover:opacity-100"
+                className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-150"
               >
                 <Plus className="size-3.5" />
               </button>
@@ -222,19 +241,25 @@ function SortablePage({
             <TooltipContent side="bottom">Add question</TooltipContent>
           </Tooltip>
 
-          {showDelete && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={onDeletePage}
-                  className="p-1.5 mr-1 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all duration-150 opacity-0 group-hover:opacity-100"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Delete page</TooltipContent>
-            </Tooltip>
-          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={canDelete ? onDeletePage : undefined}
+                disabled={!canDelete}
+                className={cn(
+                  "p-1.5 mr-1 rounded-md transition-all duration-150",
+                  canDelete
+                    ? "text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                    : "text-muted-foreground/30 cursor-not-allowed",
+                )}
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {canDelete ? "Delete page" : "Can't delete the only page"}
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         <CollapsibleContent className="pl-4 pr-2 pt-1 pb-2 space-y-1">
@@ -248,23 +273,27 @@ function SortablePage({
 // ─── Main sidebar ───────────────────────────────────────────────────────────
 
 export function FormPagesSidebar() {
-  const { workspaceId, formId } = useParams<{ workspaceId: string; formId: string }>();
+  const { workspaceId, formId } = useParams<{
+    workspaceId: string;
+    formId: string;
+  }>();
 
-  const content            = useFormEditorStore((s) => s.content);
-  const activePageId       = useFormEditorStore((s) => s.activePageId);
-  const selectedItem       = useFormEditorStore((s) => s.selectedItem);
-  const form               = useFormEditorStore((s) => s.form);
-  const setActivePage      = useFormEditorStore((s) => s.setActivePage);
-  const selectItem         = useFormEditorStore((s) => s.selectItem);
-  const addPage            = useFormEditorStore((s) => s.addPage);
-  const deletePage         = useFormEditorStore((s) => s.deletePage);
-  const reorderPages       = useFormEditorStore((s) => s.reorderPages);
-  const reorderQuestions   = useFormEditorStore((s) => s.reorderQuestions);
+  const content = useFormEditorStore((s) => s.content);
+  const activePageId = useFormEditorStore((s) => s.activePageId);
+  const selectedItem = useFormEditorStore((s) => s.selectedItem);
+  const form = useFormEditorStore((s) => s.form);
+  const setActivePage = useFormEditorStore((s) => s.setActivePage);
+  const selectItem = useFormEditorStore((s) => s.selectItem);
+  const addPage = useFormEditorStore((s) => s.addPage);
+  const deletePage = useFormEditorStore((s) => s.deletePage);
+  const reorderPages = useFormEditorStore((s) => s.reorderPages);
+  const reorderQuestions = useFormEditorStore((s) => s.reorderQuestions);
 
   const { mutate: deleteCoverImage } = useDeleteCoverImage();
 
   const pages = content?.pages ?? [];
-  const formLayout = (form?.settings as FormSettings | undefined)?.formLayout ?? "vertical";
+  const formLayout =
+    (form?.settings as FormSettings | undefined)?.formLayout ?? "vertical";
   const isConversational = formLayout === "conversational";
 
   const [openPages, setOpenPages] = useState<Record<string, boolean>>({});
@@ -294,12 +323,13 @@ export function FormPagesSidebar() {
     if (!page) return;
     const oldIndex = page.questions.findIndex((q) => q.id === active.id);
     const newIndex = page.questions.findIndex((q) => q.id === over.id);
-    if (oldIndex !== -1 && newIndex !== -1) reorderQuestions(pageId, oldIndex, newIndex);
+    if (oldIndex !== -1 && newIndex !== -1)
+      reorderQuestions(pageId, oldIndex, newIndex);
   }
 
   return (
     <TooltipProvider delayDuration={200}>
-      <aside className="flex flex-col w-[260px] border-r border-border bg-background shrink-0 h-full">
+      <aside className="flex flex-col w-[260px] overflow-x-hidden border-r border-border bg-background shrink-0 h-full">
         {/* Header */}
         <div className="h-11 px-4 flex items-center justify-between border-b border-border shrink-0">
           <span className="text-xs font-bold text-foreground uppercase tracking-widest">
@@ -320,7 +350,6 @@ export function FormPagesSidebar() {
 
         <ScrollArea className="flex-1 px-2">
           <div className="py-3 space-y-1">
-
             {/* ── Start Page ──────────────────────────────────── */}
             <button
               onClick={() => selectItem({ type: "startPage" })}
@@ -360,13 +389,15 @@ export function FormPagesSidebar() {
                         setAddContentPageId(page.id);
                       }}
                       onDeletePage={() => setDeletePageId(page.id)}
-                      showDelete={pages.length > 1}
+                      canDelete={pages.length > 1}
                       isConversational={isConversational}
                     >
                       {/* Questions inside page (sortable) */}
                       {page.questions.length === 0 ? (
                         <p className="text-xs text-muted-foreground italic py-1 px-2">
-                          {isConversational ? "No question yet" : "No questions yet"}
+                          {isConversational
+                            ? "No question yet"
+                            : "No questions yet"}
                         </p>
                       ) : (
                         <DndContext
@@ -391,7 +422,11 @@ export function FormPagesSidebar() {
                                   }
                                   onSelect={() => {
                                     setActivePage(page.id);
-                                    selectItem({ type: "question", pageId: page.id, questionId: q.id });
+                                    selectItem({
+                                      type: "question",
+                                      pageId: page.id,
+                                      questionId: q.id,
+                                    });
                                   }}
                                 />
                               ))}
@@ -418,19 +453,22 @@ export function FormPagesSidebar() {
               <Flag className="size-3.5 shrink-0" />
               <span>End page</span>
             </button>
-
           </div>
         </ScrollArea>
 
         <AddContentModal
           pageId={addContentPageId}
           open={addContentPageId !== null}
-          onOpenChange={(open) => { if (!open) setAddContentPageId(null); }}
+          onOpenChange={(open) => {
+            if (!open) setAddContentPageId(null);
+          }}
         />
 
         <DeletePageModal
           open={deletePageId !== null}
-          onOpenChange={(open) => { if (!open) setDeletePageId(null); }}
+          onOpenChange={(open) => {
+            if (!open) setDeletePageId(null);
+          }}
           onConfirm={() => {
             if (deletePageId) {
               const page = pages.find((p) => p.id === deletePageId);

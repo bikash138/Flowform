@@ -205,9 +205,10 @@ function NavbarBand({
       <img
         src="/logo.svg"
         alt="Flowform"
-        className="h-5 w-auto"
+        className="h-6 w-auto"
         style={{ filter: hexLuminance(pageBg) > 0.5 ? "none" : "brightness(0) invert(1)", opacity: 0.7 }}
       />
+      <span className="text-sm font-semibold" style={{ color: pageFg, opacity: 0.7 }}>Flowform</span>
     </div>
   );
 }

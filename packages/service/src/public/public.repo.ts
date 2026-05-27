@@ -160,15 +160,44 @@ export class PublicFormRepository {
     return row ?? null;
   }
 
-  // Called async after startSession — does not block the response
+  // Called async after startSession — does not block the response.
+  // Also patches formAnalyticsSummary when the response was already submitted
+  // (race: geo lookup resolved after the user submitted the form).
   async updateGeo(
     responseId: string,
     geo: { country: string; continent: string; city: string },
   ): Promise<void> {
-    await this.db
+    // 1. Write to the individual response row and get back formId + submittedAt
+    const [updated] = await this.db
       .update(formResponse)
       .set({ country: geo.country, continent: geo.continent, city: geo.city })
-      .where(eq(formResponse.id, responseId));
+      .where(eq(formResponse.id, responseId))
+      .returning({ formId: formResponse.formId, submittedAt: formResponse.submittedAt });
+
+    // 2. If the response was already submitted when geo arrived, patch the summary.
+    //    (Happy path: geo arrives before submit is handled by incrementSubmission.)
+    if (updated?.submittedAt && updated?.formId) {
+      const { formId } = updated;
+      await this.db
+        .insert(formAnalyticsSummary)
+        .values({
+          formId,
+          continents: geo.continent ? { [geo.continent]: 1 } : {},
+          countries: geo.country ? { [geo.country]: 1 } : {},
+        })
+        .onConflictDoUpdate({
+          target: formAnalyticsSummary.formId,
+          set: {
+            continents: geo.continent
+              ? sql`jsonb_set(${formAnalyticsSummary.continents}, ${`{${geo.continent}}`}, (COALESCE(${formAnalyticsSummary.continents}->>${geo.continent}, '0')::int + 1)::text::jsonb)`
+              : formAnalyticsSummary.continents,
+            countries: geo.country
+              ? sql`jsonb_set(${formAnalyticsSummary.countries}, ${`{${geo.country}}`}, (COALESCE(${formAnalyticsSummary.countries}->>${geo.country}, '0')::int + 1)::text::jsonb)`
+              : formAnalyticsSummary.countries,
+            updatedAt: new Date(),
+          },
+        });
+    }
   }
 
   // Analytics Summary (Upsert)

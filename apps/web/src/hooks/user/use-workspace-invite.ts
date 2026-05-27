@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/utils/trpc";
 import { toast } from "sonner";
+import { parseErrorMessage } from "@/utils/parse-error-message";
 
 export const useCreateInvite = () => {
   const trpc = useTRPC();
@@ -17,7 +18,7 @@ export const useCreateInvite = () => {
       });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to send invitation");
+      toast.error(parseErrorMessage(error, "Failed to send invitation"));
     },
   });
 };
@@ -48,7 +49,7 @@ export const useRevokeInvite = () => {
       });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to revoke invitation");
+      toast.error(parseErrorMessage(error, "Failed to revoke invitation"));
     },
   });
 };
@@ -68,7 +69,7 @@ export const useResendInvite = () => {
       });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to resend invitation");
+      toast.error(parseErrorMessage(error, "Failed to resend invitation"));
     },
   });
 };
@@ -98,7 +99,7 @@ export const useAcceptInvite = () => {
       queryClient.invalidateQueries();
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to accept invitation");
+      toast.error(parseErrorMessage(error, "Failed to accept invitation"));
     },
   });
 };

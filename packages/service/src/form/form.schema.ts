@@ -33,6 +33,10 @@ export const ArchiveFormInputSchema = z.object({
   formId: z.string().min(1),
 });
 
+export const UnarchiveFormInputSchema = z.object({
+  formId: z.string().min(1),
+});
+
 export const DeleteFormInputSchema = z.object({
   formId: z.string().min(1),
 });
@@ -157,6 +161,7 @@ export const FormSummarySchema = z.object({
   publishVersion: z.number(),
   closeAt: z.iso.datetime().nullable(),
   settings: FormSettingsSchema.pick({ accessType: true }),
+  responseCount: z.number(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });
@@ -242,6 +247,7 @@ export type GetFormByIdInput = z.infer<typeof GetFormByIdInputSchema>;
 export type ListFormsInput = z.infer<typeof ListFormsInputSchema>;
 export type PublishFormInput = z.infer<typeof PublishFormInputSchema>;
 export type ArchiveFormInput = z.infer<typeof ArchiveFormInputSchema>;
+export type UnarchiveFormInput = z.infer<typeof UnarchiveFormInputSchema>;
 export type DeleteFormInput = z.infer<typeof DeleteFormInputSchema>;
 export type DuplicateFormInput = z.infer<typeof DuplicateFormInputSchema>;
 export type SyncFormInput = z.infer<typeof SyncFormInputSchema>;

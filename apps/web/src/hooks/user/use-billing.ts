@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/utils/trpc";
 import { toast } from "sonner";
+import { parseErrorMessage } from "@/utils/parse-error-message";
 
 export const usePlans = () => {
   const trpc = useTRPC();
@@ -64,7 +65,7 @@ export const useActivatePlan = (workspaceId: string) => {
       });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to activate plan");
+      toast.error(parseErrorMessage(error, "Failed to activate plan"));
     },
   });
 };

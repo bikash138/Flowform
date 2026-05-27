@@ -1,4 +1,4 @@
-import { eq, and, isNotNull, count, sql, desc } from "drizzle-orm";
+import { eq, and, isNotNull, count, inArray, sql, desc } from "drizzle-orm";
 import {
   form,
   formPublishSnapshot,
@@ -108,6 +108,24 @@ export class AnalyticsRepository {
     return row?.total ?? 0;
   }
 
+  /** Batch: returns a map of formId → total submitted responses. */
+  async countAllResponsesForForms(
+    formIds: string[],
+  ): Promise<Map<string, number>> {
+    if (formIds.length === 0) return new Map();
+    const rows = await this.db
+      .select({ formId: formResponse.formId, total: count() })
+      .from(formResponse)
+      .where(
+        and(
+          inArray(formResponse.formId, formIds),
+          isNotNull(formResponse.submittedAt),
+        ),
+      )
+      .groupBy(formResponse.formId);
+    return new Map(rows.map((r) => [r.formId, r.total]));
+  }
+
   async getAllSubmittedResponses(
     formId: string,
     publishVersion: number,
@@ -139,6 +157,52 @@ export class AnalyticsRepository {
       .where(eq(formAnalyticsSummary.formId, formId))
       .limit(1);
     return row ?? null;
+  }
+
+  /**
+   * Live geo aggregation directly from formResponse rows.
+   * Used instead of formAnalyticsSummary.continents/countries because the
+   * summary may miss geo data when the geo lookup resolves after submission.
+   */
+  async getGeoBreakdown(formId: string): Promise<{
+    continents: Record<string, number>;
+    countries: Record<string, number>;
+  }> {
+    const [continentRows, countryRows] = await Promise.all([
+      this.db
+        .select({ continent: formResponse.continent, total: count() })
+        .from(formResponse)
+        .where(
+          and(
+            eq(formResponse.formId, formId),
+            isNotNull(formResponse.submittedAt),
+            isNotNull(formResponse.continent),
+          ),
+        )
+        .groupBy(formResponse.continent),
+      this.db
+        .select({ country: formResponse.country, total: count() })
+        .from(formResponse)
+        .where(
+          and(
+            eq(formResponse.formId, formId),
+            isNotNull(formResponse.submittedAt),
+            isNotNull(formResponse.country),
+          ),
+        )
+        .groupBy(formResponse.country),
+    ]);
+
+    const continents: Record<string, number> = {};
+    for (const r of continentRows) {
+      if (r.continent) continents[r.continent] = r.total;
+    }
+    const countries: Record<string, number> = {};
+    for (const r of countryRows) {
+      if (r.country) countries[r.country] = r.total;
+    }
+
+    return { continents, countries };
   }
 
   async aggregateQuestionStats(

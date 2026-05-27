@@ -1,7 +1,8 @@
 "use client";
 
-import React, { use, useEffect, useRef } from "react";
-import { useFormById } from "@/hooks/user/use-form";
+import React, { use, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useTRPC } from "@/utils/trpc";
 import { useFormEditorStore } from "@/store/use-form-editor-store";
 import { useSync } from "@/hooks/user/use-sync";
 import { FormBuilderNavbar } from "@/components/user/editor/form-editor-navbar";
@@ -17,42 +18,69 @@ export default function FormRootLayout({
 }) {
   const { workspaceId, formId } = use(params);
 
-  const { isLoading, data } = useFormById(formId, workspaceId);
+  const trpc           = useTRPC();
+  const queryClient    = useQueryClient();
   const initializeEditor = useFormEditorStore((s) => s.initializeEditor);
   const resetEditor      = useFormEditorStore((s) => s.resetEditor);
   const isInitialized    = useFormEditorStore((s) => s.isInitialized);
+  // Read title from the store — populated once fresh data has been loaded.
+  const formTitle        = useFormEditorStore((s) => s.form?.title ?? "");
 
-  // Reset the store whenever the user navigates to a different form.
-  // Using a ref so we skip the reset on the very first mount (no stale data yet).
-  const prevFormIdRef = useRef<string | null>(null);
+  // On every mount (and whenever formId / workspaceId change) we:
+  //   1. Immediately reset the store so no stale data leaks in.
+  //   2. Fetch the form straight from the DB — staleTime:0 bypasses any
+  //      React Query cache, guaranteeing the Zustand editVersion matches
+  //      the server and preventing CONFLICT errors on the first auto-save.
   useEffect(() => {
-    if (prevFormIdRef.current !== null && prevFormIdRef.current !== formId) {
+    let cancelled = false;
+
+    // Clear any previously loaded form so the UI shows a spinner while
+    // the fresh fetch is in flight.
+    resetEditor();
+
+    queryClient
+      .fetchQuery(
+        trpc.forms.getFormById.queryOptions(
+          { formId, workspaceId },
+          { staleTime: 0 }, // always go to the DB — never serve from cache
+        ),
+      )
+      .then((data) => {
+        if (cancelled) return;
+
+        const content: FormContent = (data.draftContent as FormContent) ?? {
+          startPage: null,
+          pages: [],
+          endPage: {
+            heading: "Thank you!",
+            message: null,
+            animation: "none",
+            redirectButton: null,
+          },
+          logic: [],
+        };
+
+        initializeEditor(data, content);
+      })
+      .catch((err) => {
+        // TODO: surface an error UI rather than a perpetual spinner
+        console.error("[FormRootLayout] Failed to load form:", err);
+      });
+
+    // If the component unmounts while the fetch is in flight (e.g. the user
+    // navigates away), cancel the in-flight callback and wipe the store so
+    // the next mount starts clean.
+    return () => {
+      cancelled = true;
       resetEditor();
-    }
-    prevFormIdRef.current = formId;
-  }, [formId, resetEditor]);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formId, workspaceId]); // re-run only when the route changes
 
-  // Also clear on unmount so stale data never bleeds into the next session.
-  useEffect(() => {
-    return () => { resetEditor(); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (data && !isInitialized) {
-      const content: FormContent = (data.draftContent as FormContent) ?? {
-        startPage: null,
-        pages: [],
-        endPage: { heading: "Thank you!", message: null, animation: "none", redirectButton: null },
-        logic: [],
-      };
-      initializeEditor(data, content);
-    }
-  }, [data, isInitialized, initializeEditor]);
-
+  // Auto-save wires up only after a successful initialization.
   useSync(isInitialized ? formId : null, workspaceId);
 
-  if (isLoading || !data || !isInitialized) {
+  if (!isInitialized) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background">
         <Spinner className="size-8 text-primary" />
@@ -62,7 +90,7 @@ export default function FormRootLayout({
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-background">
-      <FormBuilderNavbar workspaceId={workspaceId} formTitle={data.title} />
+      <FormBuilderNavbar workspaceId={workspaceId} formTitle={formTitle} />
       <main className="flex flex-1 overflow-hidden">{children}</main>
     </div>
   );

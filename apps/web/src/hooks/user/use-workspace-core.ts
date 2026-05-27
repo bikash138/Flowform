@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/utils/trpc";
 import { toast } from "sonner";
+import { parseErrorMessage } from "@/utils/parse-error-message";
 
 export const useWorkspaces = () => {
   const trpc = useTRPC();
@@ -34,7 +35,7 @@ export const useCreateWorkspace = (options?: {
       options?.onSuccess?.(data.id);
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to create workspace");
+      toast.error(parseErrorMessage(error, "Failed to create workspace"));
     },
   });
 };
@@ -59,7 +60,7 @@ export const useUpdateWorkspace = () => {
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to update workspace");
+      toast.error(parseErrorMessage(error, "Failed to update workspace"));
     },
   });
 };
@@ -82,7 +83,7 @@ export const useDeleteWorkspace = () => {
       });
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to delete workspace");
+      toast.error(parseErrorMessage(error, "Failed to delete workspace"));
     },
   });
 };

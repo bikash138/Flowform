@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/utils/trpc";
 import { toast } from "sonner";
+import { parseErrorMessage } from "@/utils/parse-error-message";
 import type { AnswerEntry } from "@flowform/services/public";
 
 //Public form query
@@ -36,7 +37,7 @@ export function useSubmitResponse(onSuccess?: () => void) {
     ...trpc.public.submitResponse.mutationOptions(),
     onSuccess: () => onSuccess?.(),
     onError: (error) =>
-      toast.error(error.message || "Failed to submit response"),
+      toast.error(parseErrorMessage(error, "Failed to submit response")),
   });
 }
 
@@ -51,7 +52,7 @@ export function useStartSession() {
   const trpc = useTRPC();
   return useMutation({
     ...trpc.public.startSession.mutationOptions(),
-    onError: (error) => toast.error(error.message || "Failed to start session"),
+    onError: (error) => toast.error(parseErrorMessage(error, "Failed to start session")),
   });
 }
 

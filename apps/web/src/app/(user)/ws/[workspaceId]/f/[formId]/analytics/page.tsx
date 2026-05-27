@@ -44,6 +44,7 @@ import {
   Star,
   Gem,
   Check,
+  RefreshCw,
 } from "lucide-react";
 import type { QuestionStat } from "@flowform/services/analytics";
 
@@ -102,8 +103,7 @@ function UpgradeGate({
     "Visual conversion funnel with drop-off rates",
     "Per-question breakdowns for choice & rating questions",
     "Geographic breakdown by continent, country & city",
-    "Paginated response table with full answer detail",
-    "Export all responses as CSV",
+    "Average completion time per response",
   ];
 
   return (
@@ -481,7 +481,19 @@ function QuestionStatsSection({
 
   return (
     <div className="space-y-4">
-      <SectionHeader icon={BarChart2} title="Question Insights" right={versionPicker} />
+      <SectionHeader
+        icon={BarChart2}
+        title="Question Insights"
+        right={
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+              <RefreshCw className="size-3 shrink-0" />
+              Updates every 2 min
+            </span>
+            {versionPicker}
+          </div>
+        }
+      />
 
       {isLoading && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -10,6 +10,10 @@ Flowform is a modern form builder that turns questions into conversations — he
 
 ---
 
+<img src=".github/DEMO_1.png" alt="Flowform Demo" width="100%" />
+
+---
+
 [✨ Features](#-features) · [🎨 Form Builder](#-form-builder) · [📊 Analytics](#-analytics) · [👥 Teams](#-teams) · [💎 Plans](#-plans)
 
 </div>

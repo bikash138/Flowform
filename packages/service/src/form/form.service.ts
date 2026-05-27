@@ -53,6 +53,7 @@ import type {
   UpdateFontInput,
   UpdateFontOutput,
   ArchiveFormInput,
+  UnarchiveFormInput,
   DuplicateFormInput,
   FormSummary,
   FormDetail,
@@ -83,7 +84,7 @@ export class FormService {
   private readonly analyticsRepo = new AnalyticsRepository();
   private readonly cache = new CacheService();
 
-  private toSummary(doc: FormRecord): FormSummary {
+  private toSummary(doc: FormRecord, responseCount = 0): FormSummary {
     return {
       id: doc.id,
       title: doc.title,
@@ -96,6 +97,7 @@ export class FormService {
       settings: {
         accessType: (doc.settings as FormSettings).accessType,
       },
+      responseCount,
       createdAt: doc.createdAt.toISOString(),
       updatedAt: doc.updatedAt.toISOString(),
     };
@@ -188,7 +190,10 @@ export class FormService {
     status?: FormStatus,
   ): Promise<FormSummary[]> {
     const docs = await this.repo.listActiveByWorkspace(workspaceId, status);
-    return docs.map((d) => this.toSummary(d));
+    const counts = await this.analyticsRepo.countAllResponsesForForms(
+      docs.map((d) => d.id),
+    );
+    return docs.map((d) => this.toSummary(d, counts.get(d.id) ?? 0));
   }
 
   async getFormById(formId: string, workspaceId: string): Promise<FormDetail> {
@@ -221,6 +226,24 @@ export class FormService {
       throw new TRPCError({ code: "NOT_FOUND", message: "Form not found." });
     }
     log.info({ formId: input.formId }, "Form archived");
+    return this.toDetail(updated);
+  }
+
+  async unarchiveForm(
+    input: UnarchiveFormInput,
+    workspaceId: string,
+  ): Promise<FormDetail> {
+    const updated = await this.repo.updateByIdAndWorkspace(
+      input.formId,
+      workspaceId,
+      {
+        status: "DRAFT",
+      },
+    );
+    if (!updated) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Form not found." });
+    }
+    log.info({ formId: input.formId }, "Form unarchived");
     return this.toDetail(updated);
   }
 

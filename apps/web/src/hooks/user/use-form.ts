@@ -1,10 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+﻿import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/utils/trpc";
 import { toast } from "sonner";
 import { useFormEditorStore } from "@/store/use-form-editor-store";
 import type { FormTheme } from "@flowform/database/models";
+import { parseErrorMessage } from "@/utils/parse-error-message";
 
-// ─── Queries ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Queries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const useForms = (workspaceId: string) => {
   const trpc = useTRPC();
@@ -61,7 +62,7 @@ export const useCheckSlugAvailable = (
   );
 };
 
-// ─── Mutations ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Mutations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const useCreateForm = () => {
   const trpc = useTRPC();
@@ -77,7 +78,7 @@ export const useCreateForm = () => {
         }),
       });
     },
-    onError: (error) => toast.error(error.message || "Failed to create form"),
+    onError: (error) => toast.error(parseErrorMessage(error, "Failed to create form")),
   });
 };
 
@@ -95,7 +96,7 @@ export const useDeleteForm = () => {
         }),
       });
     },
-    onError: (error) => toast.error(error.message || "Failed to delete form"),
+    onError: (error) => toast.error(parseErrorMessage(error, "Failed to delete form")),
   });
 };
 
@@ -114,7 +115,7 @@ export const useDuplicateForm = () => {
       });
     },
     onError: (error) =>
-      toast.error(error.message || "Failed to duplicate form"),
+      toast.error(parseErrorMessage(error, "Failed to duplicate form")),
   });
 };
 
@@ -143,7 +144,7 @@ export const usePublishForm = () => {
         }),
       });
     },
-    onError: (error) => toast.error(error.message || "Failed to publish form"),
+    onError: (error) => toast.error(parseErrorMessage(error, "Failed to publish form")),
   });
 };
 
@@ -156,13 +157,30 @@ export const useArchiveForm = () => {
     onSuccess: (_, variables) => {
       toast.success("Form archived");
       queryClient.invalidateQueries({
-        queryKey: trpc.forms.getFormById.queryKey({
-          formId: variables.formId,
+        queryKey: trpc.forms.listForms.queryKey({
           workspaceId: variables.workspaceId,
         }),
       });
     },
-    onError: (error) => toast.error(error.message || "Failed to archive form"),
+    onError: (error) => toast.error(parseErrorMessage(error, "Failed to archive form")),
+  });
+};
+
+export const useUnarchiveForm = () => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    ...trpc.forms.unarchiveForm.mutationOptions(),
+    onSuccess: (_, variables) => {
+      toast.success("Form restored to draft");
+      queryClient.invalidateQueries({
+        queryKey: trpc.forms.listForms.queryKey({
+          workspaceId: variables.workspaceId,
+        }),
+      });
+    },
+    onError: (error) => toast.error(parseErrorMessage(error, "Failed to unarchive form")),
   });
 };
 
@@ -181,7 +199,7 @@ export const useUpdateSettings = () => {
         }),
       });
     },
-    onError: (error) => toast.error(error.message || "Failed to save settings"),
+    onError: (error) => toast.error(parseErrorMessage(error, "Failed to save settings")),
   });
 };
 
@@ -201,7 +219,7 @@ export const useUpdateTheme = () => {
         }),
       });
     },
-    onError: (error) => toast.error(error.message || "Failed to apply theme"),
+    onError: (error) => toast.error(parseErrorMessage(error, "Failed to update theme")),
   });
 };
 
@@ -221,7 +239,7 @@ export const useUpdateFont = () => {
         }),
       });
     },
-    onError: (error) => toast.error(error.message || "Failed to update font"),
+    onError: (error) => toast.error(parseErrorMessage(error, "Failed to update font")),
   });
 };
 
@@ -232,7 +250,7 @@ export const useSetAccessCode = () => {
     ...trpc.forms.setAccessCode.mutationOptions(),
     onSuccess: () => toast.success("Access code updated"),
     onError: (error) =>
-      toast.error(error.message || "Failed to update access code"),
+      toast.error(parseErrorMessage(error, "Failed to update access code")),
   });
 };
 
@@ -245,11 +263,11 @@ export const usePatchPublish = () => {
     onSuccess: (data, variables) => {
       toast.success("Form updated");
       useFormEditorStore.getState().publishSuccess(data.publishVersion);
-      // patchPublish increments editVersion on the backend — update local version
+      // patchPublish increments editVersion on the backend â€” update local version
       // to prevent CONFLICT on the next auto-save
       const latest = useFormEditorStore.getState();
       if (latest.syncStatus === "dirty") {
-        // Pending edits exist — keep dirty but bump editVersion so next sync succeeds
+        // Pending edits exist â€” keep dirty but bump editVersion so next sync succeeds
         useFormEditorStore.setState({ editVersion: data.editVersion, syncStatus: "dirty" });
       } else {
         useFormEditorStore.setState({ editVersion: data.editVersion, syncStatus: "synced" });
@@ -261,7 +279,7 @@ export const usePatchPublish = () => {
         }),
       });
     },
-    onError: (error) => toast.error(error.message || "Failed to update form"),
+    onError: (error) => toast.error(parseErrorMessage(error, "Failed to update form")),
   });
 };
 
@@ -297,7 +315,7 @@ export const useUpdateSlug = () => {
         }),
       });
     },
-    onError: (error) => toast.error(error.message || "Failed to update slug"),
+    onError: (error) => toast.error(parseErrorMessage(error, "Failed to update slug")),
   });
 };
 

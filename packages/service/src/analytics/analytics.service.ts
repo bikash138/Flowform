@@ -66,15 +66,15 @@ export class AnalyticsService {
     input: GetGeoStatsInput,
     workspaceId: string,
   ): Promise<GetGeoStatsOutput> {
-    const [owned, row] = await Promise.all([
+    const [owned, geo] = await Promise.all([
       this.repo.isFormOwnedByWorkspace(input.formId, workspaceId),
-      this.repo.getAnalyticsSummary(input.formId),
+      this.repo.getGeoBreakdown(input.formId),
     ]);
     this.guardOwnership(owned);
 
     return {
-      continents: (row?.continents as Record<string, number>) ?? {},
-      countries: (row?.countries as Record<string, number>) ?? {},
+      continents: geo.continents,
+      countries: geo.countries,
     };
   }
 

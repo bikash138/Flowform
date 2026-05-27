@@ -110,7 +110,7 @@ function createAuth() {
     emailAndPassword: {
       enabled: true,
     },
-    trustedOrigins: [frontendUrl],
+    trustedOrigins: [frontendUrl, frontendUrl.replace("https://", "https://www.")],
     session: {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,
