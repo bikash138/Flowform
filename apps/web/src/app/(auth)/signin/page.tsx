@@ -3,13 +3,51 @@
 import { Suspense, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Eye, EyeOff } from "lucide-react";
+import { Copy, Check, Eye, EyeOff, KeyRound } from "lucide-react";
 import { useForm } from "@tanstack/react-form";
 import { GoogleIcon } from "@/assets/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signInWithEmail, signInWithGoogle } from "@/rest-api/auth.api";
+
+const DEMO_CREDENTIALS = [
+  { label: "Email", value: "chaicode@gmail.com" },
+  { label: "Password", value: "chaicode" },
+  { label: "Protected Form Password", value: "CHAICODE" },
+];
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="ml-2 rounded p-1 text-muted-foreground transition-colors hover:text-foreground"
+      aria-label={`Copy ${text}`}
+    >
+      {copied ? (
+        <Check className="size-3.5 text-green-500" />
+      ) : (
+        <Copy className="size-3.5" />
+      )}
+    </button>
+  );
+}
 
 function SignInContent() {
   const router = useRouter();
@@ -250,6 +288,42 @@ function SignInContent() {
                   Sign up.
                 </Link>
               </p>
+            </div>
+
+            {/* Demo Credentials */}
+            <div className="mt-4 flex justify-center">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1.5 rounded-full border border-dashed border-border px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+                  >
+                    <KeyRound className="size-3.5" />
+                    View demo credentials
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-sm">
+                  <DialogHeader>
+                    <DialogTitle>Demo Credentials</DialogTitle>
+                  </DialogHeader>
+                  <div className="mt-2 flex flex-col gap-3">
+                    {DEMO_CREDENTIALS.map(({ label, value }) => (
+                      <div
+                        key={label}
+                        className="flex items-center justify-between rounded-lg border border-border bg-muted/40 px-4 py-3"
+                      >
+                        <div>
+                          <p className="text-xs text-muted-foreground">{label}</p>
+                          <p className="mt-0.5 font-mono text-sm font-medium text-foreground">
+                            {value}
+                          </p>
+                        </div>
+                        <CopyButton text={value} />
+                      </div>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </section>

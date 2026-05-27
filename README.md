@@ -14,9 +14,28 @@ Flowform is a modern form builder that turns questions into conversations — he
 
 ---
 
-[✨ Features](#-features) · [🎨 Form Builder](#-form-builder) · [📊 Analytics](#-analytics) · [👥 Teams](#-teams) · [💎 Plans](#-plans)
+[🔑 Demo](#-demo-credentials) · [✨ Features](#-features) · [🎨 Form Builder](#-form-builder) · [📊 Analytics](#-analytics) · [👥 Teams](#-teams) · [💎 Plans](#-plans)
 
 </div>
+
+---
+
+## 🔑 Demo Credentials
+
+Want to explore Flowform without signing up? Use the credentials below to log straight in:
+
+| Field    | Value              |
+| -------- | ------------------ |
+| Email    | chaicode@gmail.com |
+| Password | chaicode           |
+
+### Protected Form Password
+
+One of the demo forms is password-protected. Use this to unlock it:
+
+| Field         | Value    |
+| ------------- | -------- |
+| Form Password | CHAICODE |
 
 ---
 

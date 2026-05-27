@@ -64,12 +64,21 @@ export const metadata: Metadata = {
     siteName: "FlowForm",
     locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "FlowForm - Create Beautiful Forms Effortlessly",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Flowform",
     description: "The modern standard for form building, powered by AI.",
     creator: "@bikash",
+    images: ["/og-image.png"],
   },
   icons: {
     icon: "/favicon.svg",

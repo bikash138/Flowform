@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import {
   Star, ChevronLeft, ChevronRight, PlayCircle, Flag, RotateCcw,
-  ImageIcon, Lock, ExternalLink, Loader2, Globe,
+  ImageIcon, Lock, ExternalLink, Loader2,
 } from "lucide-react";
 import type {
   FormContent, FormTheme, FormFont, Question, EndPageAnimation,
@@ -24,21 +24,10 @@ type PreviewSettings = {
   formLayout: "vertical" | "conversational";
   navbar: { showBranding: false } | { showBranding: true; logoUrl: string; brandName: string };
   progressBar: { enabled: false } | { enabled: true; style: "bar" | "steps" | "percentage" };
-  languages: string[];
-  defaultLanguage: string;
   removeWatermark: boolean;
   redirectOnComplete?: { url: string; label: string } | null;
 };
 
-const LANG_NAMES: Record<string, string> = {
-  en: "English", fr: "Français", es: "Español", de: "Deutsch",
-  it: "Italiano", pt: "Português", nl: "Nederlands", ru: "Русский",
-  zh: "中文", ja: "日本語", ko: "한국어", ar: "العربية",
-  hi: "हिन्दी", pl: "Polski", tr: "Türkçe", sv: "Svenska",
-  da: "Dansk", fi: "Suomi", nb: "Norsk", cs: "Čeština",
-  uk: "Українська", ro: "Română", hu: "Magyar", id: "Indonesia",
-  vi: "Tiếng Việt", th: "ภาษาไทย",
-};
 
 // ─── Theme / font helpers ─────────────────────────────────────────────────────
 
@@ -257,35 +246,12 @@ function EndAnimation({ type }: { type: EndPageAnimation }) {
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
 function NavbarBand({
-  settings, pageBg, pageFg, selectedLang, onLangChange,
+  settings, pageBg, pageFg,
 }: {
   settings: PreviewSettings; pageBg: string; pageFg: string;
-  selectedLang?: string; onLangChange?: (lang: string) => void;
 }) {
   const navbar = settings.navbar;
   const borderColor = pageFg + "18";
-  const showLangPicker = settings.languages.length > 1;
-
-  function LangPicker() {
-    if (!showLangPicker) return null;
-    return (
-      <div className="flex items-center gap-1.5 ml-auto">
-        <Globe className="size-3.5 shrink-0" style={{ color: pageFg, opacity: 0.6 }} />
-        <select
-          value={selectedLang}
-          onChange={(e) => onLangChange?.(e.target.value)}
-          className="text-xs font-medium outline-none cursor-pointer bg-transparent border-none appearance-none pr-1"
-          style={{ color: pageFg }}
-        >
-          {settings.languages.map((lang) => (
-            <option key={lang} value={lang}>
-              {LANG_NAMES[lang] ?? lang.toUpperCase()}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
-  }
 
   if (navbar.showBranding) {
     return (
@@ -299,7 +265,6 @@ function NavbarBand({
         <span className="text-sm font-semibold" style={{ color: pageFg }}>
           {navbar.brandName}
         </span>
-        <LangPicker />
       </div>
     );
   }
@@ -316,7 +281,6 @@ function NavbarBand({
         style={{ filter: hexLuminance(pageBg) > 0.5 ? "none" : "brightness(0) invert(1)", opacity: 0.7 }}
       />
       <span className="text-sm font-semibold" style={{ color: pageFg, opacity: 0.7 }}>Flowform</span>
-      <LangPicker />
     </div>
   );
 }
@@ -452,7 +416,7 @@ function InteractiveField({
           type="tel"
           value={(value as string) ?? ""}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder ?? "+1-555-000-0000"}
+          placeholder={placeholder ?? "+1 555 000 0000"}
           style={style}
           className={inputCls2}
         />
@@ -743,7 +707,7 @@ function WatermarkFooter({ pageFg, pageBg }: { pageFg: string; pageBg: string })
 // ─── Vertical layout nav ──────────────────────────────────────────────────────
 
 function VerticalNavActions({
-  settings, pages, pageIndex, view, isLastPage, pageFg, pageBg,
+  settings, pages, pageIndex, view, isLastPage, pageFg,
   onPrev, onNext, onRestart, prevDisabled,
 }: {
   settings: PreviewSettings;
@@ -752,7 +716,6 @@ function VerticalNavActions({
   view: ViewState;
   isLastPage: boolean;
   pageFg: string;
-  pageBg: string;
   onPrev: () => void;
   onNext: () => void;
   onRestart: () => void;
@@ -816,7 +779,7 @@ function VerticalNavActions({
 function ConvQuestionPage({
   currentPage, pageIndex, pagesLength, conversationalQuestion,
   answers, errors, prevDisabled, showNextButton, isLastPage,
-  theme, settings, pageFg, pageBg, onPrev, onNext, onAnswer,
+  theme, settings, pageFg, onPrev, onNext, onAnswer,
 }: {
   currentPage: FormContent["pages"][number] | undefined;
   pageIndex: number;
@@ -830,7 +793,6 @@ function ConvQuestionPage({
   theme: FormTheme;
   settings: PreviewSettings;
   pageFg: string;
-  pageBg: string;
   onPrev: () => void;
   onNext: () => void;
   onAnswer: (id: string, v: AnswerValue, type: Question["type"]) => void;
@@ -947,18 +909,18 @@ function ConvQuestionPage({
     <>
       {/* Mobile: image top, question bottom */}
       <div className="md:hidden flex flex-col h-full ff-card-enter">
-        <ImageSlot className="relative h-1/2 shrink-0 overflow-hidden" />
+        {ImageSlot({ className: "relative h-1/2 shrink-0 overflow-hidden" })}
         <div className="relative h-1/2 overflow-hidden flex flex-col">
           <div className="absolute inset-0 overflow-y-auto px-5 flex flex-col">
             <div className="my-auto py-4 pb-24">
-              <QuestionContent />
+              {QuestionContent()}
             </div>
           </div>
           <div
             className="absolute bottom-0 left-0 right-0 px-5 pb-3 pt-12"
             style={{ background: `linear-gradient(to bottom, transparent, ${cardBg} 40%)` }}
           >
-            <NavButtons />
+            {NavButtons({})}
           </div>
         </div>
       </div>
@@ -966,18 +928,18 @@ function ConvQuestionPage({
       {/* Desktop: two columns */}
       <div className="hidden md:flex flex-row h-full ff-card-enter">
         {imagePosition === "left" && (
-          <ImageSlot className="relative w-[45%] shrink-0 overflow-hidden" />
+          ImageSlot({ className: "relative w-[45%] shrink-0 overflow-hidden" })
         )}
         <div className="flex-1 flex flex-col p-8 xl:p-10 overflow-y-auto min-w-0">
           <div className="flex-1 flex flex-col justify-center">
-            <QuestionContent />
+            {QuestionContent()}
           </div>
           <div className="shrink-0 mt-4">
-            <NavButtons borderTop />
+            {NavButtons({ borderTop: true })}
           </div>
         </div>
         {imagePosition === "right" && (
-          <ImageSlot className="relative w-[45%] shrink-0 overflow-hidden" />
+          ImageSlot({ className: "relative w-[45%] shrink-0 overflow-hidden" })
         )}
       </div>
     </>
@@ -1355,7 +1317,6 @@ export default function FormPreviewPage() {
                   theme={theme}
                   settings={settings}
                   pageFg={pageFg}
-                  pageBg={pageBg}
                   onPrev={handlePrev}
                   onNext={handleNext}
                   onAnswer={setAnswerWithAutoAdvance}
@@ -1529,7 +1490,6 @@ export default function FormPreviewPage() {
               view={view}
               isLastPage={isLastPage}
               pageFg={pageFg}
-              pageBg={pageBg}
               onPrev={handlePrev}
               onNext={handleNext}
               onRestart={handleRestart}

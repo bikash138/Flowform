@@ -89,7 +89,9 @@ function buildAnswerSchema(q: Question): z.ZodTypeAny {
       return z.string().refine((v) => !isNaN(Date.parse(v)));
 
     case "phone":
-      return z.string().refine((v) => /^\+[1-9]\d{0,2}-\d{6,14}$/.test(v.trim()));
+      // Accept common international formats: +1 (555) 000-0000, +44 20 7946 0958, etc.
+      // Strip spaces, dashes, and parens then require + followed by 7–15 digits.
+      return z.string().refine((v) => /^\+[1-9]\d{6,14}$/.test(v.trim().replace(/[\s\-().]/g, "")));
 
     case "url":
       return z.url();

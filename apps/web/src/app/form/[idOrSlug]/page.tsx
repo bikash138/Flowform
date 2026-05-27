@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  Star, ChevronLeft, ChevronRight, PlayCircle, Flag, RotateCcw,
+  Star, ChevronLeft, ChevronRight, PlayCircle, Flag,
   ImageIcon, Lock, ExternalLink, Loader2, Ban, CheckCircle2, AlertTriangle,
 } from "lucide-react";
 import type { FormContent, FormTheme, FormFont, Question, EndPageAnimation } from "@flowform/database/models";
@@ -295,7 +295,7 @@ function InteractiveField({
     case "phone":
       return (
         <input type="tel" value={(value as string) ?? ""} onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder ?? "+1 (555) 000-0000"} style={style} className={inputCls} />
+          placeholder={placeholder ?? "+1 555 000 0000"} style={style} className={inputCls} />
       );
 
     case "url":
@@ -422,11 +422,11 @@ function WatermarkFooter({ pageFg, pageBg }: { pageFg: string; pageBg: string })
 // ─── Gate screens ─────────────────────────────────────────────────────────────
 
 function GateScreen({
-  icon: Icon, iconBg, iconColor, title, description, children, pageBg, pageFg, themeVars, fontFamily,
+  icon: Icon, iconBg, iconColor, title, description, children, pageBg, themeVars, fontFamily,
 }: {
   icon: React.ElementType; iconBg: string; iconColor: string;
   title: string; description: string; children?: React.ReactNode;
-  pageBg: string; pageFg: string; themeVars: React.CSSProperties; fontFamily: string;
+  pageBg: string; themeVars: React.CSSProperties; fontFamily: string;
 }) {
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: pageBg, fontFamily }}>
@@ -546,25 +546,25 @@ function ConvQuestionPage({
   return (
     <>
       <div className="md:hidden flex flex-col h-full ff-card-enter">
-        <ImageSlot className="relative h-1/2 shrink-0 overflow-hidden" />
+        {ImageSlot({ className: "relative h-1/2 shrink-0 overflow-hidden" })}
         <div className="relative h-1/2 overflow-hidden flex flex-col">
           <div className="absolute inset-0 overflow-y-auto px-5 flex flex-col">
-            <div className="my-auto py-4 pb-24"><QuestionContent /></div>
+            <div className="my-auto py-4 pb-24">{QuestionContent()}</div>
           </div>
           <div className="absolute bottom-0 left-0 right-0 px-5 pb-3 pt-12"
             style={{ background: `linear-gradient(to bottom, transparent, ${cardBg} 40%)` }}>
-            <NavButtons />
+            {NavButtons({})}
           </div>
         </div>
       </div>
 
       <div className="hidden md:flex flex-row h-full ff-card-enter">
-        {imagePosition === "left" && <ImageSlot className="relative w-[45%] shrink-0 overflow-hidden" />}
+        {imagePosition === "left" && ImageSlot({ className: "relative w-[45%] shrink-0 overflow-hidden" })}
         <div className="flex-1 flex flex-col p-8 xl:p-10 overflow-y-auto min-w-0">
-          <div className="flex-1 flex flex-col justify-center"><QuestionContent /></div>
-          <div className="shrink-0 mt-4"><NavButtons borderTop /></div>
+          <div className="flex-1 flex flex-col justify-center">{QuestionContent()}</div>
+          <div className="shrink-0 mt-4">{NavButtons({ borderTop: true })}</div>
         </div>
-        {imagePosition === "right" && <ImageSlot className="relative w-[45%] shrink-0 overflow-hidden" />}
+        {imagePosition === "right" && ImageSlot({ className: "relative w-[45%] shrink-0 overflow-hidden" })}
       </div>
     </>
   );
@@ -702,7 +702,7 @@ export default function PublicFormPage() {
         <GateScreen
           icon={Lock} iconBg={"var(--primary)" + "20"} iconColor={"var(--primary)"}
           title={data.title} description="This form is password protected. Enter the access code to continue."
-          pageBg={pageBg} pageFg={pageFg} themeVars={themeVars} fontFamily={fontFamily}
+          pageBg={pageBg} themeVars={themeVars} fontFamily={fontFamily}
         >
           <div className="w-full space-y-2">
             <input type="text" value={pendingCode}
@@ -734,7 +734,7 @@ export default function PublicFormPage() {
           icon={Ban} iconBg="#ef444420" iconColor="#ef4444"
           title="This form is closed"
           description="Responses are no longer being accepted. Please contact the form owner for more information."
-          pageBg={pageBg} pageFg={pageFg} themeVars={themeVars} fontFamily={fontFamily}
+          pageBg={pageBg} themeVars={themeVars} fontFamily={fontFamily}
         />
       </>
     );
@@ -750,7 +750,7 @@ export default function PublicFormPage() {
           icon={CheckCircle2} iconBg="#22c55e20" iconColor="#22c55e"
           title="Already submitted"
           description="You've already filled out this form. Only one response per person is allowed."
-          pageBg={pageBg} pageFg={pageFg} themeVars={themeVars} fontFamily={fontFamily}
+          pageBg={pageBg} themeVars={themeVars} fontFamily={fontFamily}
         />
       </>
     );
@@ -812,6 +812,11 @@ export default function PublicFormPage() {
       }
       if ((q.type === "short_text" || q.type === "long_text") && typeof ans === "string" && q.config?.maxLength) {
         if (ans.length > q.config.maxLength) newErrors[q.id] = `Maximum ${q.config.maxLength} characters`;
+      }
+      if (q.type === "phone" && typeof ans === "string") {
+        const stripped = ans.trim().replace(/[\s\-().]/g, "");
+        if (!/^\+[1-9]\d{6,14}$/.test(stripped))
+          newErrors[q.id] = "Please enter a valid phone number starting with a country code (e.g. +1 555 000 0000)";
       }
       if (q.type === "url" && typeof ans === "string") {
         try { new URL(ans.trim()); } catch { newErrors[q.id] = "Please enter a valid URL"; }

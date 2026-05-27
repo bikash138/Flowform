@@ -108,8 +108,6 @@ function buildCsv(
   rows: WireRow[],
   columns: ResponseColumn[],
   collectEmail: boolean,
-  formTitle: string,
-  version: number,
 ): string {
   const emailCol = collectEmail ? ["Email"] : [];
   const headers = [
@@ -170,12 +168,13 @@ function ResponseDrawer({
 }) {
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+      <SheetContent className="w-full sm:max-w-lg flex flex-col p-0 gap-0">
         {row && (
           <>
-            <SheetHeader className="mb-6">
-              <SheetTitle className="text-base">Response #{index}</SheetTitle>
-              <div className="flex flex-col gap-1.5 mt-1">
+            {/* Fixed header */}
+            <div className="shrink-0 px-6 pt-6 pb-4 border-b pr-12">
+              <SheetTitle className="text-base font-semibold">Response #{index}</SheetTitle>
+              <div className="flex flex-col gap-1.5 mt-2">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Clock className="size-3.5 shrink-0" />
                   {formatDateTime(row.submittedAt)}
@@ -189,40 +188,43 @@ function ResponseDrawer({
                   </div>
                 )}
               </div>
-            </SheetHeader>
+            </div>
 
-            <div className="space-y-5">
-              {columns.map((col) => {
-                const ans = row.answers.find(
-                  (a) => a.questionId === col.questionId,
-                );
-                const display = ans
-                  ? formatValue(ans.value, ans.type, col.options)
-                  : "—";
-                const isEmpty = display === "—";
-                return (
-                  <div key={col.questionId} className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium leading-snug">
-                        {col.label}
-                      </span>
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
-                        {TYPE_LABEL[col.type] ?? col.type}
-                      </Badge>
+            {/* Scrollable answers */}
+            <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5">
+              <div className="space-y-5">
+                {columns.map((col) => {
+                  const ans = row.answers.find(
+                    (a) => a.questionId === col.questionId,
+                  );
+                  const display = ans
+                    ? formatValue(ans.value, ans.type, col.options)
+                    : "—";
+                  const isEmpty = display === "—";
+                  return (
+                    <div key={col.questionId} className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium leading-snug">
+                          {col.label}
+                        </span>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
+                          {TYPE_LABEL[col.type] ?? col.type}
+                        </Badge>
+                      </div>
+                      <p
+                        className={
+                          isEmpty
+                            ? "text-sm text-muted-foreground italic"
+                            : "text-sm whitespace-pre-wrap wrap-break-word"
+                        }
+                      >
+                        {display}
+                      </p>
+                      <div className="border-b border-border/50" />
                     </div>
-                    <p
-                      className={
-                        isEmpty
-                          ? "text-sm text-muted-foreground italic"
-                          : "text-sm whitespace-pre-wrap wrap-break-word"
-                      }
-                    >
-                      {display}
-                    </p>
-                    <div className="border-b border-border/50" />
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </>
         )}
@@ -266,14 +268,14 @@ function ResponseTable({
             <th className="px-3 py-2.5 text-left">
               <Hash className="size-3.5 text-muted-foreground" />
             </th>
-            <th className="px-4 py-2.5 text-left font-medium text-xs text-muted-foreground whitespace-nowrap">
-              Submitted
-            </th>
             {collectEmail && (
               <th className="px-4 py-2.5 text-left font-medium text-xs text-muted-foreground whitespace-nowrap">
                 Email
               </th>
             )}
+            <th className="px-4 py-2.5 text-left font-medium text-xs text-muted-foreground whitespace-nowrap">
+              Submitted
+            </th>
             {columns.map((col) => (
               <th
                 key={col.questionId}
@@ -301,14 +303,6 @@ function ResponseTable({
                 <td className="px-3 py-2.5 text-xs text-muted-foreground tabular-nums font-medium">
                   {globalIndex}
                 </td>
-                <td className="px-4 py-2.5 whitespace-nowrap">
-                  <span
-                    className="text-xs"
-                    title={formatDateTime(row.submittedAt)}
-                  >
-                    {relativeTime(row.submittedAt)}
-                  </span>
-                </td>
                 {collectEmail && (
                   <td className="px-4 py-2.5 text-xs max-w-[180px]">
                     <span
@@ -321,6 +315,14 @@ function ResponseTable({
                     </span>
                   </td>
                 )}
+                <td className="px-4 py-2.5 whitespace-nowrap">
+                  <span
+                    className="text-xs"
+                    title={formatDateTime(row.submittedAt)}
+                  >
+                    {relativeTime(row.submittedAt)}
+                  </span>
+                </td>
                 {columns.map((col) => {
                   const ans = row.answers.find(
                     (a) => a.questionId === col.questionId,
@@ -406,8 +408,6 @@ export default function ResultPage({
         result.rows as WireRow[],
         result.columns,
         collectEmail,
-        form?.title ?? "responses",
-        selectedVersion,
       );
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
