@@ -110,7 +110,20 @@ function createAuth() {
     emailAndPassword: {
       enabled: true,
     },
-    trustedOrigins: [frontendUrl, frontendUrl.replace("https://", "https://www.")],
+    trustedOrigins: [
+      frontendUrl,
+      // Also trust the bare domain (without www) and vice-versa
+      frontendUrl.startsWith("https://www.")
+        ? frontendUrl.replace("https://www.", "https://")
+        : frontendUrl.replace("https://", "https://www."),
+    ],
+    advanced: {
+      crossSubdomainCookies: {
+        enabled: true,
+        // Strip the subdomain — covers api.flowform.in + www.flowform.in
+        domain: frontendUrl.replace(/^https?:\/\/(www\.)?/, ""),
+      },
+    },
     session: {
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,

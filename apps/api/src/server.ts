@@ -28,9 +28,20 @@ export class ServerBuilder {
 
   public setupCoreMiddlewares(): this {
     this.app.set("trust proxy", 1);
+    const allowedOrigins = new Set([
+      env.http.frontendUrl,
+      // Also allow the www ↔ bare domain variant
+      env.http.frontendUrl.startsWith("https://www.")
+        ? env.http.frontendUrl.replace("https://www.", "https://")
+        : env.http.frontendUrl.replace("https://", "https://www."),
+    ]);
     this.app.use(
       cors({
-        origin: env.http.frontendUrl,
+        origin: (origin, cb) => {
+          // Allow same-origin / server-to-server (no Origin header) and listed origins
+          if (!origin || allowedOrigins.has(origin)) return cb(null, true);
+          cb(new Error(`CORS: origin ${origin} not allowed`));
+        },
         credentials: true,
       }),
     );
