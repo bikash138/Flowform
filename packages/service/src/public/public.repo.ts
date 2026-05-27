@@ -1,4 +1,4 @@
-import { eq, and, sql, isNotNull } from "drizzle-orm";
+import { eq, and, sql, isNotNull, desc } from "drizzle-orm";
 import {
   form,
   formPublishSnapshot,
@@ -226,6 +226,84 @@ export class PublicFormRepository {
           updatedAt: new Date(),
         },
       });
+  }
+
+  // Explore — list published public forms
+  // ⚠️  Uses JSON operators to extract ONLY the safe subset of each column.
+  //     Never returns accessCode, userId, workspaceId, draftContent, the full
+  //     settings object, the full theme object, or the full font object.
+  async listPublicForms(opts: {
+    limit: number;
+    offset: number;
+    search?: string;
+  }) {
+    const conditions: ReturnType<typeof sql>[] = [
+      sql`${form.status} = 'PUBLISHED'`,
+      sql`${form.isDeleted} = false`,
+      sql`${form.settings}->>'accessType' = 'public'`,
+      sql`(${form.closeAt} IS NULL OR ${form.closeAt} > NOW())`,
+    ];
+
+    if (opts.search?.trim()) {
+      const term = `%${opts.search.trim()}%`;
+      conditions.push(
+        sql`(${form.title} ILIKE ${term} OR ${form.description} ILIKE ${term})`,
+      );
+    }
+
+    const whereClause = and(...conditions);
+
+    const [rows, countResult] = await Promise.all([
+      this.db
+        .select({
+          id: form.id,
+          slug: form.slug,
+          title: form.title,
+          description: form.description,
+          // Extract only primaryColor — never backgroundImage (signed S3 URL)
+          primaryColor: sql<string>`${form.theme}->>'primaryColor'`,
+          // Extract only the two safe settings fields
+          formLayout: sql<string>`${form.settings}->>'formLayout'`,
+          collectEmail: sql<boolean>`(${form.settings}->>'collectEmail')::boolean`,
+          // Analytics (safe aggregates)
+          views: sql<number>`COALESCE(${formAnalyticsSummary.views}, 0)`,
+          submissions: sql<number>`COALESCE(${formAnalyticsSummary.submissions}, 0)`,
+          avgTimeMs: formAnalyticsSummary.avgTimeMs,
+          // Publish date from snapshot
+          publishedAt: formPublishSnapshot.publishedAt,
+          // Count questions across all pages without returning content
+          questionCount: sql<number>`COALESCE((
+            SELECT COUNT(*)::int
+            FROM jsonb_array_elements(
+              COALESCE(${formPublishSnapshot.content}, '{"pages":[]}'::jsonb)->'pages'
+            ) AS page_el,
+                 jsonb_array_elements(page_el->'questions') AS q_el
+          ), 0)`,
+        })
+        .from(form)
+        .leftJoin(
+          formAnalyticsSummary,
+          eq(formAnalyticsSummary.formId, form.id),
+        )
+        .leftJoin(
+          formPublishSnapshot,
+          and(
+            eq(formPublishSnapshot.formId, form.id),
+            eq(formPublishSnapshot.publishVersion, form.publishVersion),
+          ),
+        )
+        .where(whereClause)
+        .orderBy(desc(formPublishSnapshot.publishedAt))
+        .limit(opts.limit)
+        .offset(opts.offset),
+
+      this.db
+        .select({ count: sql<number>`COUNT(*)::int` })
+        .from(form)
+        .where(whereClause),
+    ]);
+
+    return { rows, total: countResult[0]?.count ?? 0 };
   }
 
   async incrementSubmission(data: {

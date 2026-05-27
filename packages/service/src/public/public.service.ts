@@ -35,6 +35,8 @@ import type {
   PreviewFormInput,
   PreviewFormOutput,
   PreviewFormSettings,
+  ListPublicFormsInput,
+  ListPublicFormsOutput,
 } from "./public.schema";
 
 const log = createLogger("public-service");
@@ -569,5 +571,37 @@ export class PublicFormService {
 
     const redirectUrl = settings.redirectOnComplete?.url ?? null;
     return { success: true, redirectUrl };
+  }
+
+  // Explore — list published public forms
+  // Maps repo rows to the safe ExploreFormCard shape.
+  async listPublicForms(input: ListPublicFormsInput): Promise<ListPublicFormsOutput> {
+    const { rows, total } = await this.repo.listPublicForms({
+      limit: input.limit,
+      offset: input.offset,
+      search: input.search,
+    });
+
+    const items = rows.map((row) => ({
+      id: row.id,
+      slug: row.slug ?? null,
+      title: row.title,
+      description: row.description ?? null,
+      primaryColor: row.primaryColor ?? "#6366f1",
+      formLayout: (row.formLayout ?? "vertical") as "vertical" | "conversational",
+      collectEmail: row.collectEmail ?? false,
+      questionCount: row.questionCount ?? 0,
+      views: row.views ?? 0,
+      submissions: row.submissions ?? 0,
+      avgTimeMs: row.avgTimeMs ?? null,
+      // Serialise Date → ISO string (tRPC JSON transport)
+      publishedAt: row.publishedAt ? new Date(row.publishedAt).toISOString() : null,
+    }));
+
+    return {
+      items,
+      total,
+      hasMore: input.offset + items.length < total,
+    };
   }
 }

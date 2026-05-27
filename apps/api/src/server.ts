@@ -57,6 +57,23 @@ export class ServerBuilder {
           if (res.statusCode >= 400) return "warn";
           return "info";
         },
+        // Trim request log to only method + url
+        serializers: {
+          req(req) {
+            return { method: req.method, url: req.url };
+          },
+          // Trim response log to only status code
+          res(res) {
+            return { statusCode: res.statusCode };
+          },
+        },
+        // Single-line summary: METHOD /path STATUS Xms
+        customSuccessMessage(req, res, responseTime) {
+          return `${req.method} ${req.url} ${res.statusCode} ${responseTime}ms`;
+        },
+        customErrorMessage(req, res) {
+          return `${req.method} ${req.url} ${res.statusCode}`;
+        },
       }),
     );
     return this;

@@ -66,4 +66,18 @@ export function usePreviewForm(formId: string) {
   );
 }
 
+// Explore page
+const EXPLORE_PAGE_SIZE = 24;
+
+export function useExploreForms(search: string, limit = EXPLORE_PAGE_SIZE) {
+  const trpc = useTRPC();
+  return useQuery(
+    trpc.public.listForms.queryOptions({
+      limit,
+      offset: 0,
+      search: search.trim() || undefined,
+    }),
+  );
+}
+
 export type { SubmitInput };

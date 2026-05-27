@@ -145,7 +145,44 @@ export const PreviewFormOutputSchema = z.object({
   settings: PreviewFormSettingsSchema,
 });
 
+// List Public Forms (Explore)
+// ⚠️  Only expose fields safe for public listing — no accessCode, userId,
+//     workspaceId, draftContent, full settings, full theme, full font.
+
+export const ListPublicFormsInputSchema = z.object({
+  limit: z.number().int().min(1).max(50).default(24),
+  offset: z.number().int().min(0).default(0),
+  search: z.string().max(100).optional(),
+});
+
+export const ExploreFormCardSchema = z.object({
+  id: z.string(),
+  slug: z.string().nullable(),
+  title: z.string(),
+  description: z.string().nullable(),
+  // Only the accent color — never backgroundImage (could be a signed S3 URL)
+  primaryColor: z.string(),
+  formLayout: z.enum(["vertical", "conversational"]),
+  collectEmail: z.boolean(),
+  questionCount: z.number().int(),
+  views: z.number().int(),
+  submissions: z.number().int(),
+  avgTimeMs: z.number().int().nullable(),
+  // ISO string after JSON serialisation (tRPC strips Date → string)
+  publishedAt: z.string().nullable(),
+});
+
+export const ListPublicFormsOutputSchema = z.object({
+  items: z.array(ExploreFormCardSchema),
+  total: z.number().int(),
+  hasMore: z.boolean(),
+});
+
 // Inferred Types
+
+export type ListPublicFormsInput = z.infer<typeof ListPublicFormsInputSchema>;
+export type ListPublicFormsOutput = z.infer<typeof ListPublicFormsOutputSchema>;
+export type ExploreFormCard = z.infer<typeof ExploreFormCardSchema>;
 
 export type PreviewFormInput = z.infer<typeof PreviewFormInputSchema>;
 export type PreviewFormOutput = z.infer<typeof PreviewFormOutputSchema>;

@@ -11,6 +11,8 @@ import {
   SubmitResponseOutputSchema,
   PreviewFormInputSchema,
   PreviewFormOutputSchema,
+  ListPublicFormsInputSchema,
+  ListPublicFormsOutputSchema,
 } from "@flowform/services/public";
 import { generatePath } from "../utils/path-generator";
 
@@ -54,4 +56,11 @@ export const publicRouter = router({
     .input(PreviewFormInputSchema)
     .output(PreviewFormOutputSchema)
     .query(({ input }) => publicFormService.previewPublicForm(input)),
+
+  // Explore page — publicly lists forms with accessType="public"
+  listForms: publicProcedure
+    .meta({ openapi: { method: "GET", path: getPath("/"), tags: TAGS } })
+    .input(ListPublicFormsInputSchema)
+    .output(ListPublicFormsOutputSchema)
+    .query(({ input }) => publicFormService.listPublicForms(input)),
 });
