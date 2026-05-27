@@ -37,6 +37,16 @@ One of the demo forms is password-protected. Use this to unlock it:
 | ------------- | -------- |
 | Form Password | CHAICODE |
 
+### Demo Forms
+
+Try these live forms to see Flowform in action:
+
+| Form | Link |
+| ---- | ---- |
+| Simple Vertical Form | [flowform.in/form/chai-placement](https://www.flowform.in/form/chai-placement) |
+| Conversational Style Form | [flowform.in/form/chai-review](https://www.flowform.in/form/chai-review) |
+| Protected Form | [flowform.in/form/chai-confidential](https://www.flowform.in/form/chai-confidential) |
+
 ---
 
 ## Why Flowform?
