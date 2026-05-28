@@ -1,5 +1,5 @@
-import { Navbar } from "@/components/landing/navbar";
 import { Hero } from "@/components/landing/hero";
+import { Navbar } from "@/components/landing/navbar";
 import { Features } from "@/components/landing/features";
 import { DarkFeatures } from "@/components/landing/dark-features";
 import { Templates } from "@/components/landing/templates";

@@ -88,6 +88,7 @@ function PlanCard({ tier, badge, price, description, cta, features }: PlanCardPr
 function ProCard() {
   return (
     <div
+      id="pricing-pro-card"
       className="rounded-2xl p-8 flex flex-col relative overflow-hidden bg-[#2B1F14] border-2 border-[#D9B38C] shadow-xl shadow-[#D9B38C]/10"
     >
       <style>{`

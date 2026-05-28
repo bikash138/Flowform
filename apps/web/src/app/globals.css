@@ -50,6 +50,18 @@
   --color-primary-light: var(--primary-light);
   --color-primary-dark: var(--primary-dark);
   --color-primary-subtle: var(--primary-subtle);
+
+  /* ─── Landing Navbar ─────────────────────────────────────────────────────── */
+  --color-nav-ink: var(--nav-ink);
+  --color-nav-ink-deep: var(--nav-ink-deep);
+  --color-nav-ink-hover: var(--nav-ink-hover);
+  --color-nav-cream: var(--nav-cream);
+
+  /* ─── Landing Hero ───────────────────────────────────────────────────────── */
+  --color-landing-bg: var(--landing-bg);
+  --color-hero-subtext: var(--hero-subtext);
+  --color-hero-muted: var(--hero-muted);
+  --color-hero-accent: var(--hero-accent);
 }
 
 :root {
@@ -89,6 +101,18 @@
   --primary: #D9B38C;
   --primary-dark: #A68A6D;
   --primary-subtle: #F2E8DA;
+
+  /* ─── Landing Navbar ─────────────────────────────────────────────────────── */
+  --nav-ink: #1C1610;
+  --nav-ink-deep: #17120D;
+  --nav-ink-hover: #2C2010;
+  --nav-cream: #F5EFE6;
+
+  /* ─── Landing Hero ───────────────────────────────────────────────────────── */
+  --landing-bg: #FDFAF6;
+  --hero-subtext: #5C4E40;
+  --hero-muted: #8B7B6B;
+  --hero-accent: #C4956A;
 }
 
 .dark {

@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og-image.webp",
         width: 1200,
         height: 630,
         alt: "FlowForm - Create Beautiful Forms Effortlessly",
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
     title: "Flowform",
     description: "The modern standard for form building, powered by AI.",
     creator: "@bikash",
-    images: ["/og-image.png"],
+    images: ["/og-image.webp"],
   },
   icons: {
     icon: "/favicon.svg",
