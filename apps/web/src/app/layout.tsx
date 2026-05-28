@@ -4,6 +4,7 @@ import {
   Geist_Mono,
   Plus_Jakarta_Sans,
   Open_Sans,
+  Cormorant_Garamond,
 } from "next/font/google";
 import "./globals.css";
 import { Provider } from "@/providers/global";
@@ -28,6 +29,13 @@ const openSans = Open_Sans({
   variable: "--font-open-sans",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800"],
+});
+
+const cormorantGaramond = Cormorant_Garamond({
+  variable: "--font-cormorant",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -93,7 +101,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${jakartaSans.variable} ${openSans.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${jakartaSans.variable} ${openSans.variable} ${cormorantGaramond.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <Provider>{children}</Provider>

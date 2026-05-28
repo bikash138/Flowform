@@ -8,6 +8,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-open-sans), var(--font-jakarta-sans), var(--font-geist-sans);
+  --font-display: var(--font-cormorant), Georgia, serif;
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-open-sans), var(--font-jakarta-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -212,6 +213,27 @@
   textarea {
     @apply font-sans outline-none;
   }
+}
+
+/* ─── Footer ────────────────────────────────────────────────────────────── */
+.footer-heading {
+  font-family: var(--font-cormorant), Georgia, serif;
+  font-weight: 600;
+  font-style: italic;
+}
+
+.footer-illustration-fade {
+  background: linear-gradient(to bottom, #FDFAF6 0%, transparent 20%, transparent 100%);
+}
+
+@keyframes drawSquiggle {
+  to { stroke-dashoffset: 0; }
+}
+
+.squiggle-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: drawSquiggle 1.4s ease-out forwards 0.3s;
 }
 
 /* ─── Form preview theming ───────────────────────────────────────────────── */

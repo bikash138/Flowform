@@ -1,5 +1,6 @@
 import { Hero } from "@/components/landing/hero";
 import { Navbar } from "@/components/landing/navbar";
+import { HowItWorks } from "@/components/landing/how-it-works";
 import { Features } from "@/components/landing/features";
 import { DarkFeatures } from "@/components/landing/dark-features";
 import { Templates } from "@/components/landing/templates";
@@ -13,6 +14,7 @@ export default function Home() {
     <div className="flex flex-col flex-1 bg-[#FDFAF6] font-sans">
       <Navbar />
       <Hero />
+      <HowItWorks />
       <Features />
       <DarkFeatures />
       <Templates />
