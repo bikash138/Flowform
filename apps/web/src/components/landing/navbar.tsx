@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { motion, type Variants } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import {
   NavigationMenu,
@@ -39,27 +40,28 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const dark = isDark || isPricing;
+  const darkFull = isDark;
+  const darkLinks = isDark || isPricing;
 
-  const theme = dark
-    ? {
-        logo:        "text-nav-cream",
-        logoFilter:  "brightness-0 invert",
-        link:        "text-white/80 hover:text-white hover:bg-white/10",
-        trigger:     "text-white/80 hover:text-white bg-transparent hover:bg-nav-ink/40 data-open:bg-nav-ink/40",
-        signIn:      "text-white/80 hover:text-white hover:bg-white/10",
-        cta:         "bg-nav-cream text-nav-ink-deep hover:bg-white",
-        hamburger:   "text-white hover:bg-white/10",
-      }
-    : {
-        logo:        "text-nav-ink",
-        logoFilter:  "",
-        link:        "text-nav-ink/80 hover:text-nav-ink hover:bg-black/5",
-        trigger:     "text-nav-ink/80 hover:text-nav-ink bg-transparent hover:bg-nav-ink/10 data-open:bg-nav-ink/10",
-        signIn:      "text-nav-ink/80 hover:text-nav-ink hover:bg-black/5",
-        cta:         "bg-nav-ink text-nav-cream hover:bg-nav-ink-hover",
-        hamburger:   "text-nav-ink hover:bg-black/5",
-      };
+  const theme = {
+    logo: darkFull ? "text-nav-cream" : "text-nav-ink",
+    logoFilter: darkFull ? "brightness-0 invert" : "",
+    link: darkLinks
+      ? "text-white/80 hover:text-white hover:bg-white/10"
+      : "text-nav-ink/80 hover:text-nav-ink hover:bg-black/5",
+    trigger: darkLinks
+      ? "text-white/80 hover:text-white bg-transparent hover:bg-nav-ink/40 data-open:bg-nav-ink/40"
+      : "text-nav-ink/80 hover:text-nav-ink bg-transparent hover:bg-nav-ink/10 data-open:bg-nav-ink/10",
+    signIn: darkFull
+      ? "text-white/80 hover:text-white hover:bg-white/10"
+      : "text-nav-ink/80 hover:text-nav-ink hover:bg-black/5",
+    cta: darkFull
+      ? "bg-nav-cream text-nav-ink-deep hover:bg-white"
+      : "bg-nav-ink text-nav-cream hover:bg-nav-ink-hover",
+    hamburger: darkFull
+      ? "text-white hover:bg-white/10"
+      : "text-nav-ink hover:bg-black/5",
+  };
 
   const glassBg = !scrolled
     ? "bg-transparent"
@@ -76,10 +78,13 @@ export function Navbar() {
         aria-hidden
         className={`absolute inset-0 pointer-events-none transition-all duration-300 ${glassBg}`}
       />
-      <nav className="relative flex items-center justify-between px-8 py-2">
-
+      <nav className="relative flex items-center justify-between px-4 py-1 sm:px-8 sm:py-2">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 shrink-0 group" aria-label="Flowform home">
+        <Link
+          href="/#hero"
+          className="flex items-center gap-2 shrink-0 group"
+          aria-label="Flowform home"
+        >
           <Image
             src="/logo.svg"
             alt="Flowform logo"
@@ -87,7 +92,9 @@ export function Navbar() {
             height={36}
             className={`transition-all duration-300 group-hover:scale-105 shrink-0 ${theme.logoFilter}`}
           />
-          <span className={`font-bold text-2xl tracking-wider transition-colors duration-300 ${theme.logo}`}>
+          <span
+            className={`hidden sm:inline font-bold text-2xl tracking-wider transition-colors duration-300 ${theme.logo}`}
+          >
             Flowform
           </span>
         </Link>
@@ -96,49 +103,55 @@ export function Navbar() {
         <div className="hidden md:flex absolute left-1/2 -translate-x-1/2">
           <NavigationMenu>
             <NavigationMenuList>
-              {(Object.keys(NAV_MENUS) as Array<keyof typeof NAV_MENUS>).map((label) => (
-                <NavigationMenuItem key={label}>
-                  <NavigationMenuTrigger
-                    className={`cursor-pointer text-base font-medium transition-colors duration-150 ${theme.trigger}`}
-                  >
-                    {label}
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <div className={`${dropdownBg} p-7 w-[580px] min-h-[260px] flex`}>
+              {(Object.keys(NAV_MENUS) as Array<keyof typeof NAV_MENUS>).map(
+                (label) => (
+                  <NavigationMenuItem key={label}>
+                    <NavigationMenuTrigger
+                      className={`cursor-pointer text-base font-medium transition-colors duration-150 ${theme.trigger}`}
+                    >
+                      {label}
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <div
+                        className={`${dropdownBg} p-7 w-[580px] min-h-[260px] flex`}
+                      >
+                        {/* Left column */}
+                        <DropdownCol col={NAV_MENUS[label].left} />
 
-                      {/* Left column */}
-                      <DropdownCol col={NAV_MENUS[label].left} />
+                        <div className="w-px bg-white/10 mx-4 self-stretch" />
 
-                      <div className="w-px bg-white/10 mx-4 self-stretch" />
-
-                      {/* Right column — items or image */}
-                      {"image" in NAV_MENUS[label].right ? (
-                        <div className="flex-1 flex items-stretch">
-                          <Link
-                            href={(NAV_MENUS[label].right as ColImage).image.href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="relative w-full rounded-xl overflow-hidden block"
-                          >
-                            <Image
-                              src={meImage}
-                              alt="Creator"
-                              fill
-                              quality={90}
-                              sizes="230px"
-                              placeholder="blur"
-                              className="object-cover object-top"
-                            />
-                          </Link>
-                        </div>
-                      ) : (
-                        <DropdownCol col={NAV_MENUS[label].right as ColItems} />
-                      )}
-
-                    </div>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-              ))}
+                        {/* Right column — items or image */}
+                        {"image" in NAV_MENUS[label].right ? (
+                          <div className="flex-1 flex items-stretch">
+                            <Link
+                              href={
+                                (NAV_MENUS[label].right as ColImage).image.href
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="relative w-full rounded-xl overflow-hidden block"
+                            >
+                              <Image
+                                src={meImage}
+                                alt="Creator"
+                                fill
+                                quality={90}
+                                sizes="230px"
+                                placeholder="blur"
+                                className="object-cover object-top"
+                              />
+                            </Link>
+                          </div>
+                        ) : (
+                          <DropdownCol
+                            col={NAV_MENUS[label].right as ColItems}
+                          />
+                        )}
+                      </div>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+                ),
+              )}
             </NavigationMenuList>
           </NavigationMenu>
         </div>
@@ -172,16 +185,24 @@ export function Navbar() {
       {/* Mobile menu */}
       <div
         className={[
-          "md:hidden mx-3 mb-3 rounded-2xl overflow-hidden transition-all duration-250 ease-in-out",
+          "md:hidden mx-3 rounded-2xl overflow-hidden transition-all duration-250 ease-in-out",
           "bg-nav-ink/50 backdrop-blur-2xl border border-white/10",
-          menuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0",
+          menuOpen
+            ? "max-h-[500px] opacity-100 mb-3"
+            : "max-h-0 opacity-0 mb-0",
         ].join(" ")}
       >
         <div className="px-6 py-3 flex flex-col gap-1">
           {["Features", "Explore", "Pricing", "Contact"].map((label) => (
             <Link
               key={label}
-              href={label === "Features" ? "#features" : label === "Explore" ? "/explore" : `#${label.toLowerCase()}`}
+              href={
+                label === "Features"
+                  ? "#features"
+                  : label === "Explore"
+                    ? "/explore"
+                    : `#${label.toLowerCase()}`
+              }
               onClick={() => setMenuOpen(false)}
               className="px-3 py-2.5 rounded-lg text-sm font-medium text-center text-white/80 hover:text-white hover:bg-white/10 transition-colors duration-150"
             >
@@ -210,15 +231,34 @@ export function Navbar() {
   );
 }
 
+const colVariants: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.05, delayChildren: 0.03 } },
+};
+const textVariants: Variants = {
+  hidden: { opacity: 0, y: 7 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: "easeOut" } },
+};
+
 function DropdownCol({ col }: { col: ColItems }) {
   return (
     <div className="flex-1">
-      <p className="text-[0.65rem] font-semibold tracking-widest uppercase text-white/40 mb-3">
+      <motion.p
+        variants={textVariants}
+        initial="hidden"
+        animate="show"
+        className="text-[0.65rem] font-semibold tracking-widest uppercase text-white/40 mb-3"
+      >
         {col.heading}
-      </p>
-      <ul className="flex flex-col gap-2">
+      </motion.p>
+      <motion.ul
+        variants={colVariants}
+        initial="hidden"
+        animate="show"
+        className="flex flex-col gap-2"
+      >
         {col.items.map((item) => (
-          <li key={item.label}>
+          <motion.li key={item.label} variants={textVariants}>
             <NavigationMenuLink asChild>
               <Link
                 href={item.href}
@@ -232,9 +272,9 @@ function DropdownCol({ col }: { col: ColItems }) {
                 </p>
               </Link>
             </NavigationMenuLink>
-          </li>
+          </motion.li>
         ))}
-      </ul>
+      </motion.ul>
     </div>
   );
 }

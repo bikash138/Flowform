@@ -233,7 +233,77 @@
 .squiggle-line {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
+}
+
+.squiggle-line.squiggle-animate {
   animation: drawSquiggle 1.4s ease-out forwards 0.3s;
+}
+
+/* ─── Landing shared ────────────────────────────────────────────────────── */
+.landing-badge {
+  @apply text-[0.7rem] font-semibold tracking-[0.14em] uppercase text-[#A68A6D];
+}
+
+.landing-h2 {
+  font-size: clamp(1.9rem, 3.5vw, 2.6rem);
+  @apply text-[#2B2B2B] font-bold leading-[1.1];
+}
+
+/* ─── Features mockup cards ─────────────────────────────────────────────── */
+.mockup-card {
+  @apply w-full rounded-2xl border border-[#E8DDD0] bg-white overflow-hidden;
+  box-shadow: 0 8px 48px rgba(43, 43, 43, 0.08);
+}
+
+.mockup-card-header {
+  @apply px-6 py-4 border-b border-[#F0E8DE];
+}
+
+.mockup-label {
+  @apply text-[0.6rem] font-semibold tracking-widest uppercase text-[#A68A6D];
+}
+
+.feature-tab-h3 {
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  @apply text-[#2B2B2B] font-bold leading-[1.15] whitespace-pre-line;
+}
+
+.feature-fade-gradient {
+  height: 52px;
+  background: linear-gradient(to bottom, #FDFAF6, transparent);
+  pointer-events: none;
+}
+
+.mockup-panel {
+  @apply absolute inset-0;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+  pointer-events: none;
+}
+
+.mockup-panel-active {
+  opacity: 1;
+  transform: translateY(0px);
+  pointer-events: auto;
+}
+
+.feature-tab-btn {
+  @apply px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap;
+}
+
+.feature-tab-btn-active {
+  @apply bg-[#2B2B2B] text-white shadow-sm;
+}
+
+.feature-tab-btn-inactive {
+  @apply text-[#6B6256] hover:text-[#2B2B2B] hover:bg-[#F5EFE6];
+}
+
+/* ─── Templates infinite scroll ─────────────────────────────────────────────── */
+.template-columns-mask {
+  mask-image: linear-gradient(to bottom, transparent, black 12%, black 88%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 12%, black 88%, transparent);
 }
 
 /* ─── Form preview theming ───────────────────────────────────────────────── */

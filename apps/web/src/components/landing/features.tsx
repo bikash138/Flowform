@@ -1,151 +1,118 @@
-import Link from "next/link";
-import { BarChart2, Zap, Paintbrush } from "lucide-react";
+"use client";
 
-const BENEFITS = [
-  {
-    icon: Zap,
-    title: "High Completion Rates",
-    description:
-      "Conversational or traditional layouts, built-in progress bars, and conditional logic keep respondents engaged from first question to submit.",
-  },
-  {
-    icon: BarChart2,
-    title: "Instant Response Insights",
-    description:
-      "Every submission hits your dashboard in real time with geographic data, device breakdown, and question-level analytics — no extra tools needed.",
-  },
-  {
-    icon: Paintbrush,
-    title: "Your Brand, Your Style",
-    description:
-      "12 built-in themes, custom fonts, colors, and border styles. On Pro Max, remove the Flowform watermark entirely.",
-  },
-];
+import { useRef, useState, useEffect } from "react";
+import { CheckCircle2, ImageIcon } from "lucide-react";
+import { TABS } from "@/data/features-tabs";
 
-function FormMockup() {
+function FeatureImagePlaceholder({ label }: { label: string }) {
   return (
-    <div className="w-full rounded-2xl border border-[#E8DDD0] bg-white shadow-[0_8px_48px_rgba(43,43,43,0.08)] overflow-hidden">
-      {/* Form header */}
-      <div className="px-6 pt-6 pb-4 border-b border-[#F0E8DE]">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-2 h-2 rounded-full bg-[#D9B38C]" />
-          <span className="text-[0.65rem] font-semibold tracking-widest uppercase text-[#A68A6D]">
-            Customer Feedback
-          </span>
-        </div>
-        <p className="text-base font-bold text-[#2B2B2B]">How did we do today?</p>
+    <div className="w-full rounded-2xl border border-[#E8DDD0] bg-[#F7F2EC] overflow-hidden flex flex-col items-center justify-center gap-3" style={{ minHeight: 480 }}>
+      <div className="w-14 h-14 rounded-2xl bg-[#E8DDD0] flex items-center justify-center">
+        <ImageIcon size={26} className="text-[#A68A6D]" strokeWidth={1.5} />
       </div>
-
-      {/* Form fields */}
-      <div className="px-6 py-5 flex flex-col gap-5">
-        {/* Field 1 — Short Text */}
-        <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-[#6B6256]">Your Name</span>
-          <div className="h-10 w-full rounded-lg border border-[#E8DDD0] bg-[#FDFAF6] flex items-center px-3">
-            <span className="text-xs text-[#C0B0A0]">John Smith</span>
-          </div>
-        </div>
-
-        {/* Field 2 — Radio */}
-        <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-[#6B6256]">Overall Satisfaction</span>
-          <div className="flex gap-2">
-            {["Very satisfied", "Satisfied", "Neutral"].map((opt) => (
-              <div
-                key={opt}
-                className="flex-1 h-9 rounded-lg border border-[#E8DDD0] bg-[#FDFAF6] flex items-center justify-center"
-              >
-                <span className="text-[0.6rem] text-[#8B7B6B] font-medium">{opt}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Field 3 — Long Text */}
-        <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-[#6B6256]">Any comments?</span>
-          <div className="h-20 w-full rounded-lg border border-[#E8DDD0] bg-[#FDFAF6] flex items-start p-3">
-            <span className="text-xs text-[#C0B0A0]">Share your thoughts...</span>
-          </div>
-        </div>
-
-        {/* Submit button */}
-        <div className="pt-1">
-          <div className="h-10 w-28 rounded-xl bg-[#2B2B2B] flex items-center justify-center">
-            <span className="text-sm font-semibold text-white">Submit</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Progress bar */}
-      <div className="px-6 pb-5 flex items-center gap-3">
-        <div className="flex-1 h-1.5 rounded-full bg-[#F0E8DE] overflow-hidden">
-          <div className="h-full w-2/3 rounded-full bg-[#D9B38C]" />
-        </div>
-        <span className="text-[0.65rem] font-semibold text-[#A68A6D]">
-          2 / 3
-        </span>
-      </div>
+      <p className="text-sm text-[#A68A6D] font-medium">{label} screenshot</p>
     </div>
   );
 }
 
 export function Features() {
+  const [activeTab, setActiveTab] = useState(0);
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([null, null, null, null]);
+
+  useEffect(() => {
+    const observers: IntersectionObserver[] = [];
+    sectionRefs.current.forEach((ref, index) => {
+      if (!ref) return;
+      const observer = new IntersectionObserver(
+        (entries) => { entries.forEach((e) => { if (e.isIntersecting) setActiveTab(index); }); },
+        { rootMargin: "-35% 0px -55% 0px", threshold: 0 }
+      );
+      observer.observe(ref);
+      observers.push(observer);
+    });
+    return () => observers.forEach((obs) => obs.disconnect());
+  }, []);
+
+  const scrollToSection = (index: number) =>
+    sectionRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "center" });
+
   return (
     <section id="features" className="bg-[#FDFAF6] px-6 pt-20 pb-24">
       <div className="max-w-5xl mx-auto">
-        {/* Top: spotlight row */}
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-          {/* Left */}
-          <div className="flex-1 flex flex-col items-start">
-            <span className="text-[0.7rem] font-semibold tracking-[0.14em] uppercase text-[#A68A6D] mb-5">
-              Features
-            </span>
-            <h2
-              className="text-[#2B2B2B] font-bold leading-[1.1] mb-5 max-w-sm"
-              style={{ fontSize: "clamp(1.9rem, 3.5vw, 2.6rem)" }}
-            >
-              Build any form
-              <br />
-              in minutes.
-            </h2>
-            <p className="text-[#6B6256] text-base leading-relaxed mb-8 max-w-sm">
-              Drag, drop, publish. No code, no complexity. Create contact forms,
-              surveys, registration forms, and more — then share them anywhere
-              and watch real responses come in.
-            </p>
-            <Link
-              href="#templates"
-              className="inline-flex items-center px-5 py-2.5 rounded-xl text-sm font-semibold bg-[#2B2B2B] text-white hover:bg-[#3D3D3D] active:scale-[0.97] transition-all duration-150 shadow-sm"
-            >
-              Explore templates
-            </Link>
-          </div>
 
-          {/* Right — form mockup */}
-          <div className="flex-1 w-full max-w-md lg:max-w-none">
-            <FormMockup />
-          </div>
+        {/* Header */}
+        <div className="text-center mb-16">
+          <span className="landing-badge mb-5 block">Features</span>
+          <h2 className="landing-h2">
+            Build any form<br />in minutes.
+          </h2>
+          <p className="mt-4 text-[#6B6256] text-base max-w-md mx-auto leading-relaxed">
+            Everything you need to create, customize, and analyze forms — in one place.
+          </p>
         </div>
 
-        {/* Bottom: 3 benefit cards */}
-        <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {BENEFITS.map(({ icon: Icon, title, description }) => (
-            <div
-              key={title}
-              className="flex flex-col gap-3 p-6 rounded-2xl border border-[#E8DDD0] bg-white shadow-sm hover:shadow-md transition-shadow duration-200"
-            >
-              <div className="w-10 h-10 rounded-xl bg-[#F2E8DA] flex items-center justify-center">
-                <Icon size={18} strokeWidth={2} className="text-[#A68A6D]" />
-              </div>
-              <h3 className="text-[#2B2B2B] font-bold text-base leading-snug mb-0">
-                {title}
-              </h3>
-              <p className="text-[#6B6256] text-sm leading-relaxed mb-0">
-                {description}
-              </p>
+        {/* Two-column sticky layout — image LEFT, text RIGHT */}
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 items-start">
+
+          {/* LEFT: sticky image panel */}
+          <div className="hidden lg:flex flex-1 sticky top-0 h-screen items-center py-8">
+            <div className="w-full relative" style={{ minHeight: 480 }}>
+              {TABS.map((tab, i) => (
+                <div key={tab.id} className={`mockup-panel ${activeTab === i ? "mockup-panel-active" : ""}`}>
+                  <FeatureImagePlaceholder label={tab.label} />
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* RIGHT: pill nav + stacked text sections */}
+          <div className="flex-1 flex flex-col">
+
+            {/* Pill nav — sticky below site navbar */}
+            <div className="hidden lg:block sticky top-14 z-20">
+              <div className="pt-6 pb-4 bg-[#FDFAF6]">
+                <div className="inline-flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full border border-[#E8DDD0] shadow-sm p-1">
+                  {TABS.map((tab, i) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => scrollToSection(i)}
+                      className={`feature-tab-btn ${activeTab === i ? "feature-tab-btn-active" : "feature-tab-btn-inactive"}`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="feature-fade-gradient" />
+            </div>
+
+            {/* Tab sections */}
+            {TABS.map((tab, i) => (
+              <div
+                key={tab.id}
+                ref={(el) => { sectionRefs.current[i] = el; }}
+                className="min-h-screen flex flex-col justify-center py-16"
+              >
+                <span className="landing-badge mb-5 block">{tab.badge}</span>
+                <h3 className="feature-tab-h3 mb-4">{tab.title}</h3>
+                <p className="text-[#6B6256] text-base leading-relaxed mb-6 max-w-sm">{tab.description}</p>
+                <ul className="flex flex-col gap-3">
+                  {tab.bullets.map((bullet) => (
+                    <li key={bullet} className="flex items-center gap-2.5 text-sm text-[#6B6256]">
+                      <CheckCircle2 size={14} className="text-[#A68A6D] shrink-0" />
+                      {bullet}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Mobile: image below text */}
+                <div className="lg:hidden mt-10">
+                  <FeatureImagePlaceholder label={tab.label} />
+                </div>
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
     </section>

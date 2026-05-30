@@ -1,3 +1,7 @@
+"use client";
+
+import { useRef } from "react";
+import { useInView } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import footerIllustration from "@/assets/footer.webp";
@@ -18,13 +22,16 @@ const SOCIALS = [
 ];
 
 export function Footer() {
+  const headingRef = useRef(null);
+  const inView = useInView(headingRef, { once: true, margin: "-10% 0px" });
+
   return (
     <footer
       id="contact"
       className="bg-[#FDFAF6] overflow-hidden rounded-t-[2.5rem] border-t border-[#E8DDD0] mx-4"
     >
       <div className="flex flex-col items-center text-center px-6 pt-20 pb-10 gap-5">
-        <h2 className="footer-heading text-3xl sm:text-4xl md:text-5xl text-[#1C1610] leading-tight max-w-2xl mb-0">
+        <h2 ref={headingRef} className="footer-heading text-3xl sm:text-4xl md:text-5xl text-[#1C1610] leading-tight max-w-2xl mb-0">
           The ones who show up,
           <br />
           <span className="relative inline-block text-[#C4956A] font-bold">
@@ -39,7 +46,7 @@ export function Footer() {
               aria-hidden="true"
             >
               <path
-                className="squiggle-line"
+                className={`squiggle-line ${inView ? "squiggle-animate" : ""}`}
                 d="M0,5 C14,1 28,9 42,5 C56,1 70,9 84,5 C98,1 112,9 126,5 C140,1 154,9 168,5 C182,1 196,9 200,5"
                 stroke="#C4956A"
                 strokeWidth="2.5"

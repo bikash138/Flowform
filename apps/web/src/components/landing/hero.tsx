@@ -11,8 +11,7 @@ const pillLinkClass =
 
 export function Hero() {
   return (
-    <section className="relative w-full overflow-hidden">
-
+    <section id="hero" className="relative w-full overflow-hidden">
       {/* Hero image */}
       <div className="relative w-full" style={{ height: "70vh", minHeight: 480 }}>
         <Image

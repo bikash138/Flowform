@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRef, useState } from "react";
 import { Check } from "lucide-react";
 
 const FREE_FEATURES = [
@@ -48,6 +49,10 @@ type PlanCardProps = {
 };
 
 function PlanCard({ tier, badge, price, description, cta, features }: PlanCardProps) {
+  const ctaRef = useRef<HTMLAnchorElement>(null);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [hovered, setHovered] = useState(false);
+
   return (
     <div className="rounded-2xl p-8 flex flex-col bg-white border border-[#E8DDD0]">
       <div className="mb-6 h-[108px] flex flex-col justify-start">
@@ -67,8 +72,21 @@ function PlanCard({ tier, badge, price, description, cta, features }: PlanCardPr
       </div>
 
       <Link
+        ref={ctaRef}
         href="/signup"
-        className="w-full flex items-center justify-center py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 mb-8 border border-[#D9B38C] text-[#92683A] hover:bg-[#FDF6EE] active:scale-[0.98]"
+        onMouseMove={(e) => {
+          const rect = ctaRef.current?.getBoundingClientRect();
+          if (!rect) return;
+          setPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+        }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        className="relative overflow-hidden w-full flex items-center justify-center py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 mb-8 border border-[#D9B38C] text-[#92683A] active:scale-[0.98]"
+        style={{
+          background: hovered
+            ? `radial-gradient(circle 80px at ${pos.x}px ${pos.y}px, color-mix(in srgb, #D9B38C 30%, transparent), transparent 70%)`
+            : "transparent",
+        }}
       >
         {cta}
       </Link>
