@@ -19,7 +19,7 @@ export function Hero() {
           alt="Hero background"
           fill
           priority
-          quality={90}
+          quality={75}
           sizes="100vw"
           placeholder="blur"
           className="object-cover object-center"

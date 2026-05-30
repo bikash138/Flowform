@@ -3,7 +3,12 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { toNodeHandler } from "better-auth/node";
 import { getDb } from "@flowform/database/connection";
-import { user, session, account, verification } from "@flowform/database/models";
+import {
+  user,
+  session,
+  account,
+  verification,
+} from "@flowform/database/models";
 import { env } from "@flowform/env";
 import { createLogger } from "@flowform/logger";
 import { WorkspaceCoreService } from "../workspace";
@@ -15,7 +20,7 @@ let authInstance: ReturnType<typeof createAuth> | null = null;
 function createAuth() {
   const secret = env.auth.secret;
   const baseURL = env.auth.baseURL;
-  const frontendUrl = env.http.frontendUrl || "http://localhost:3000";
+  const frontendUrl = env.http.frontendUrl;
 
   const socialProviders: any = {};
   if (env.auth.providers?.google) {
@@ -110,17 +115,14 @@ function createAuth() {
     emailAndPassword: {
       enabled: true,
     },
-    trustedOrigins: [
-      frontendUrl,
-      frontendUrl.startsWith("https://www.")
-        ? frontendUrl.replace("https://www.", "https://")
-        : frontendUrl.replace("https://", "https://www."),
-    ],
+    trustedOrigins: [frontendUrl],
     advanced: {
-      useSecureCookies: baseURL.startsWith("https://"),
+      useSecureCookies: env.node.env === "production",
       defaultCookieAttributes: {
-        domain: `.${frontendUrl.replace(/^https?:\/\/(www\.)?/, "")}`,
-        secure: baseURL.startsWith("https://"),
+        ...(env.node.env === "production"
+          ? { domain: env.auth.cookieDomain }
+          : {}),
+        secure: env.node.env === "production",
         httpOnly: true,
         sameSite: "lax",
         path: "/",

@@ -18,6 +18,7 @@ const serverSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GITHUB_CLIENT_ID: z.string().optional(),
   GITHUB_CLIENT_SECRET: z.string().optional(),
+  COOKIE_DOMAIN: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   AWS_REGION: z.string(),
   AWS_ENDPOINT_URL_S3: z.string(),
@@ -26,7 +27,17 @@ const serverSchema = z.object({
   S3_BUCKET_NAME: z.string(),
 });
 
-export const serverEnvSchema = serverSchema.transform((e) => ({
+export const serverEnvSchema = serverSchema
+  .superRefine((e, ctx) => {
+    if (e.NODE_ENV === "production" && !e.COOKIE_DOMAIN) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["COOKIE_DOMAIN"],
+        message: "COOKIE_DOMAIN is required in production",
+      });
+    }
+  })
+  .transform((e) => ({
   node: { env: e.NODE_ENV, logLevel: e.LOG_LEVEL },
   http: { port: e.PORT, frontendUrl: e.FRONTEND_URL, baseUrl: e.BASE_URL },
   infra: {
@@ -36,6 +47,7 @@ export const serverEnvSchema = serverSchema.transform((e) => ({
   auth: {
     secret: e.BETTER_AUTH_SECRET,
     baseURL: e.BETTER_AUTH_URL,
+    cookieDomain: e.COOKIE_DOMAIN,
     providers: {
       google:
         e.GOOGLE_CLIENT_ID && e.GOOGLE_CLIENT_SECRET
