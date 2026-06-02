@@ -29,6 +29,7 @@ const NAV_ITEMS: { id: Tab; label: string; icon: React.ElementType }[] = [
 interface WorkspaceSettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultTab?: Tab;
   workspace?: {
     id: string;
     title: string;
@@ -42,9 +43,10 @@ interface WorkspaceSettingsModalProps {
 export function WorkspaceSettingsModal({
   open,
   onOpenChange,
+  defaultTab = "general",
   workspace,
 }: WorkspaceSettingsModalProps) {
-  const [activeTab, setActiveTab] = React.useState<Tab>("general");
+  const [activeTab, setActiveTab] = React.useState<Tab>(defaultTab);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [deleteConfirmTitle, setDeleteConfirmTitle] = React.useState("");
 
@@ -52,8 +54,9 @@ export function WorkspaceSettingsModal({
   const deleteWorkspace = useDeleteWorkspace();
 
   React.useEffect(() => {
-    if (!open) setActiveTab("general");
-  }, [open]);
+    if (open) setActiveTab(defaultTab);
+    else setActiveTab("general");
+  }, [open, defaultTab]);
 
   const handleDelete = () => {
     if (!workspace) return;

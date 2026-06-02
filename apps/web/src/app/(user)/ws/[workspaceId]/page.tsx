@@ -1,6 +1,4 @@
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import {
-  WorkspaceNavbar,
   WorkspaceSidebar,
   WorkspaceOverviewSection,
 } from "@/components/user/workspace";
@@ -11,14 +9,13 @@ export default function Page({
   params: Promise<{ workspaceId: string }>;
 }) {
   return (
-    <SidebarProvider>
+    <div className="flex h-screen overflow-hidden bg-sidebar">
       <WorkspaceSidebar />
-      <SidebarInset>
-        <WorkspaceNavbar />
+      <div className="flex flex-1 flex-col overflow-hidden">
         <div className="flex flex-1 overflow-y-auto">
           <WorkspaceOverviewSection params={params} />
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    </div>
   );
 }
