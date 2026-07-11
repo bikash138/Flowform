@@ -228,7 +228,7 @@ export default function ExplorePage() {
         </Link>
 
         <div className="flex items-center gap-2">
-          <Link href="/signin">
+          <Link href="/signup">
             <Button variant="ghost" size="sm" className="text-sm">
               Sign in
             </Button>

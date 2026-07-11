@@ -54,7 +54,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
         onSuccess: () => {
           toast.success("Signed out successfully");
           onOpenChange(false);
-          router.push("/signin");
+          router.push("/signup");
         },
       },
     });

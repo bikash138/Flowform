@@ -75,7 +75,7 @@ export default async function proxy(req: NextRequest) {
 
   if (result.status === "unauthenticated") {
     return isProtected(pathname)
-      ? NextResponse.redirect(new URL("/signin", req.url))
+      ? NextResponse.redirect(new URL("/signup", req.url))
       : NextResponse.next();
   }
 
@@ -84,7 +84,7 @@ export default async function proxy(req: NextRequest) {
 
   if (!role) {
     return isProtected(pathname)
-      ? NextResponse.redirect(new URL("/signin", req.url))
+      ? NextResponse.redirect(new URL("/signup", req.url))
       : NextResponse.next();
   }
 
@@ -92,7 +92,7 @@ export default async function proxy(req: NextRequest) {
     ? `/ws/${user.personalWorkspaceId}`
     : null;
 
-  if (pathname.startsWith("/signin") || pathname.startsWith("/signup")) {
+  if (pathname.startsWith("/signup")) {
     if (role === "admin") {
       return NextResponse.redirect(new URL("/admin", req.url));
     }
@@ -118,11 +118,5 @@ export default async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/ws/:path*",
-    "/forms/:path*",
-    "/admin/:path*",
-    "/signin",
-    "/signup",
-  ],
+  matcher: ["/ws/:path*", "/forms/:path*", "/admin/:path*", "/signup"],
 };

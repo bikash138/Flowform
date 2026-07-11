@@ -28,7 +28,7 @@ export function SignOutModal({ isOpen, onClose }: SignOutModalProps) {
         fetchOptions: {
           onSuccess: () => {
             toast.success("Signed out successfully");
-            router.push("/signin");
+            router.push("/signup");
           },
         },
       });

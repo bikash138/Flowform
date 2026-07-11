@@ -159,12 +159,6 @@ export function Navbar() {
         {/* Auth buttons */}
         <div className="hidden md:flex items-center gap-2">
           <Link
-            href="/signin"
-            className={`px-6 py-2.5 rounded-lg text-base font-medium transition-colors duration-150 ${theme.signIn}`}
-          >
-            Sign in
-          </Link>
-          <Link
             href="/signup"
             className={`px-6 py-2.5 rounded-xl text-base font-semibold active:scale-[0.97] transition-all duration-150 shadow-sm ${theme.cta}`}
           >
@@ -210,13 +204,6 @@ export function Navbar() {
             </Link>
           ))}
           <div className="border-t border-white/10 mt-2 pt-3 flex flex-col gap-2">
-            <Link
-              href="/signin"
-              onClick={() => setMenuOpen(false)}
-              className="px-3 py-2.5 rounded-lg text-sm font-medium text-center text-white/80 hover:text-white hover:bg-white/10 transition-colors duration-150"
-            >
-              Sign in
-            </Link>
             <Link
               href="/signup"
               onClick={() => setMenuOpen(false)}

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ChevronDown, Globe } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { SignupPreviewCarousel } from "@/components/auth/signup-preview-carousel";
 import { SignupOptions } from "@/components/auth/signup-options";
 
@@ -10,23 +10,26 @@ export default function SignUpPage() {
     <div className="flex min-h-dvh flex-col bg-background md:h-dvh md:max-h-dvh md:flex-row md:overflow-hidden">
       <div className="flex flex-1 flex-col">
         <header className="flex shrink-0 w-full items-center justify-between px-5 py-3.5 sm:px-8">
-          <div className="flex items-center gap-2 text-sm text-foreground/72">
-            <Globe className="size-4 shrink-0" strokeWidth={1.8} aria-hidden />
-            <span className="font-medium">English</span>
-            <ChevronDown
-              className="size-3 shrink-0"
-              strokeWidth={2.5}
+          <Link
+            href="/security"
+            className="flex items-center gap-2 text-sm font-medium text-foreground/72 transition-colors hover:text-foreground"
+            id="signup-privacy-link"
+          >
+            <ShieldCheck
+              className="size-4 shrink-0"
+              strokeWidth={1.8}
               aria-hidden
             />
-          </div>
+            <span>Privacy &amp; Policy</span>
+          </Link>
           <div className="flex items-center gap-2 text-xs sm:text-sm text-foreground/72">
-            Already have an account?{" "}
+            Have a question?{" "}
             <Link
-              href="/signin"
+              href="/contact"
               className="font-semibold text-foreground hover:text-primary-dark transition-colors"
-              id="signup-login-link"
+              id="signup-contact-link"
             >
-              Sign in
+              Contact us
             </Link>
           </div>
         </header>
