@@ -3,23 +3,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ChevronDown, Globe } from "lucide-react";
 import { SignupPreviewCarousel } from "@/components/auth/signup-preview-carousel";
-import { SignupSwappableSection } from "@/components/auth/email-signup-section";
+import { SignupOptions } from "@/components/auth/signup-options";
 
-type SignUpPageProps = {
-  searchParams: Promise<{ mode?: string | string[] }>;
-};
-
-function isEmailModeFromSearchParams(
-  mode: string | string[] | undefined,
-): boolean {
-  if (mode === undefined) return false;
-  return (Array.isArray(mode) ? mode[0] : mode) === "email";
-}
-
-export default async function SignUpPage({ searchParams }: SignUpPageProps) {
-  const sp = await searchParams;
-  const isEmailMode = isEmailModeFromSearchParams(sp.mode);
-
+export default function SignUpPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-background md:h-dvh md:max-h-dvh md:flex-row md:overflow-hidden">
       <div className="flex flex-1 flex-col">
@@ -64,7 +50,7 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
             </p>
 
             <Suspense>
-              <SignupSwappableSection isEmailMode={isEmailMode} />
+              <SignupOptions />
             </Suspense>
           </div>
         </main>

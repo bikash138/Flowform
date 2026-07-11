@@ -12,12 +12,10 @@ const serverSchema = z.object({
   DATABASE_URL: z.url(),
   REDIS_URL: z.url(),
   BETTER_AUTH_SECRET: z.string(),
-  BETTER_AUTH_URL: z.string(),
+  BETTER_AUTH_URL: z.url(),
   FRONTEND_URL: z.url(),
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  GOOGLE_CLIENT_SECRET: z.string().optional(),
-  GITHUB_CLIENT_ID: z.string().optional(),
-  GITHUB_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().min(1),
+  GOOGLE_CLIENT_SECRET: z.string().min(1),
   COOKIE_DOMAIN: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   AWS_REGION: z.string(),
@@ -49,20 +47,10 @@ export const serverEnvSchema = serverSchema
     baseURL: e.BETTER_AUTH_URL,
     cookieDomain: e.COOKIE_DOMAIN,
     providers: {
-      google:
-        e.GOOGLE_CLIENT_ID && e.GOOGLE_CLIENT_SECRET
-          ? {
-              clientId: e.GOOGLE_CLIENT_ID,
-              clientSecret: e.GOOGLE_CLIENT_SECRET,
-            }
-          : undefined,
-      github:
-        e.GITHUB_CLIENT_ID && e.GITHUB_CLIENT_SECRET
-          ? {
-              clientId: e.GITHUB_CLIENT_ID,
-              clientSecret: e.GITHUB_CLIENT_SECRET,
-            }
-          : undefined,
+      google: {
+        clientId: e.GOOGLE_CLIENT_ID,
+        clientSecret: e.GOOGLE_CLIENT_SECRET,
+      },
     },
   },
   email: { resend: e.RESEND_API_KEY },

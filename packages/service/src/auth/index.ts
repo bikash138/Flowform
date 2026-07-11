@@ -1,7 +1,8 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import { APIError } from "better-auth/api";
 import { toNodeHandler } from "better-auth/node";
+import { eq } from "drizzle-orm";
 import { getDb } from "@flowform/database/connection";
 import {
   user,
@@ -17,28 +18,66 @@ const log = createLogger("auth-service");
 
 let authInstance: ReturnType<typeof createAuth> | null = null;
 
+async function guardAndProvision(userId: string): Promise<void> {
+  const db = getDb();
+
+  const [record] = await db
+    .select({
+      name: user.name,
+      isActive: user.isActive,
+      personalWorkspaceId: user.personalWorkspaceId,
+    })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1);
+
+  if (!record) {
+    throw APIError.from("UNAUTHORIZED", {
+      message: "Account not found",
+      code: "USER_NOT_FOUND",
+    });
+  }
+
+  if (!record.isActive) {
+    throw APIError.from("FORBIDDEN", {
+      message: "Account deactivated",
+      code: "ACCOUNT_DEACTIVATED",
+    });
+  }
+
+  if (record.personalWorkspaceId) return;
+
+  const workspace = await new WorkspaceCoreService().createPersonalWorkspace(
+    userId,
+    record.name ?? "",
+  );
+
+  await db
+    .update(user)
+    .set({ personalWorkspaceId: workspace.id })
+    .where(eq(user.id, userId));
+
+  log.info(
+    { userId, workspaceId: workspace.id },
+    "Auto-provisioned personal workspace",
+  );
+}
+
 function createAuth() {
-  const secret = env.auth.secret;
-  const baseURL = env.auth.baseURL;
-  const frontendUrl = env.http.frontendUrl;
-
-  const socialProviders: any = {};
-  if (env.auth.providers?.google) {
-    socialProviders.google = env.auth.providers.google;
-  }
-  if (env.auth.providers?.github) {
-    socialProviders.github = env.auth.providers.github;
-  }
-
   return betterAuth({
     appName: "Flowform",
-    secret,
-    baseURL,
+    secret: env.auth.secret,
+    baseURL: env.auth.baseURL,
     database: drizzleAdapter(getDb(), {
       provider: "pg",
       schema: { user, session, account, verification },
     }),
-    socialProviders,
+    emailAndPassword: {
+      enabled: false,
+    },
+    socialProviders: {
+      google: env.auth.providers.google,
+    },
     user: {
       additionalFields: {
         role: {
@@ -60,62 +99,16 @@ function createAuth() {
         },
       },
     },
-    hooks: {
-      before: createAuthMiddleware(async (ctx) => {
-        if (ctx.path !== "/sign-in/email") return;
-        const email = (ctx.body as { email?: string } | undefined)?.email;
-        if (email == null || email === "") return;
-        const found = await ctx.context.internalAdapter.findUserByEmail(email);
-        const foundUser = found?.user as { isActive?: boolean } | undefined;
-        if (foundUser != null && foundUser.isActive === false) {
-          throw APIError.from("FORBIDDEN", {
-            message: "Account deactivated",
-            code: "ACCOUNT_DEACTIVATED",
-          });
-        }
-      }),
-      after: createAuthMiddleware(async (ctx) => {
-        if (
-          ctx.path === "/sign-up/email" ||
-          ctx.path === "/callback/google" ||
-          ctx.path === "/callback/github"
-        ) {
-          const result = ctx.context.returned as
-            | {
-                user: {
-                  id: string;
-                  email: string;
-                  name: string;
-                  personalWorkspaceId: string;
-                };
-              }
-            | undefined;
-
-          if (result?.user && !result.user.personalWorkspaceId) {
-            const workspaceService = new WorkspaceCoreService();
-            const workspace = await workspaceService.createPersonalWorkspace(
-              result.user.id,
-              result.user.name,
-            );
-
-            log.info(
-              { userId: result.user.id, workspaceId: workspace.id },
-              "Auto-provisioned personal workspace",
-            );
-
-            await ctx.context.internalAdapter.updateUser(result.user.id, {
-              personalWorkspaceId: workspace.id,
-            });
-
-            result.user.personalWorkspaceId = workspace.id;
-          }
-        }
-      }),
+    databaseHooks: {
+      session: {
+        create: {
+          before: async (newSession) => {
+            await guardAndProvision(newSession.userId);
+          },
+        },
+      },
     },
-    emailAndPassword: {
-      enabled: true,
-    },
-    trustedOrigins: [frontendUrl],
+    trustedOrigins: [env.http.frontendUrl],
     advanced: {
       useSecureCookies: env.node.env === "production",
       defaultCookieAttributes: {
@@ -136,7 +129,6 @@ function createAuth() {
 }
 
 export function getAuth() {
-  // Caches the auth instance because it is getting used at two places
   if (!authInstance) {
     authInstance = createAuth();
   }
