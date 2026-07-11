@@ -7,12 +7,10 @@ import {
   generateOpenApiDocument,
   createOpenApiExpressMiddleware,
 } from "trpc-to-openapi";
-
 import { env } from "@flowform/env";
 import { logger } from "@flowform/logger";
 import { authHandler } from "@flowform/services/auth";
 import { serverRouter, createContext } from "@flowform/trpc/server";
-
 import { requestIdMiddleware } from "@/middleware/request-id";
 import {
   globalLimiter,
@@ -30,7 +28,6 @@ export class ServerBuilder {
     this.app.set("trust proxy", 1);
     const allowedOrigins = new Set([
       env.http.frontendUrl,
-      // Also allow the www ↔ bare domain variant
       env.http.frontendUrl.startsWith("https://www.")
         ? env.http.frontendUrl.replace("https://www.", "https://")
         : env.http.frontendUrl.replace("https://", "https://www."),
