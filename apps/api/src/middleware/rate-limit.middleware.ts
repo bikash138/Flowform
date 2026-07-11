@@ -15,7 +15,7 @@ function createLimiter(config: LimiterConfig) {
   return rateLimit({
     windowMs: config.windowMs,
     limit: config.limit,
-    standardHeaders: "draft-8",
+    standardHeaders: "draft-8", // Uses RateLimit instead of X-Rate-Limit
     legacyHeaders: false,
     keyGenerator: config.keyGenerator ?? ((req) => req.ip ?? "unknown"),
     message: {
@@ -38,7 +38,13 @@ export const globalLimiter = createLimiter({
 
 export const authLimiter = createLimiter({
   keyPrefix: "auth",
-  windowMs: 15 * 60 * 1000,
-  limit: 20000,
+  windowMs: 10 * 60 * 1000,
+  limit: 20 , //20 req per 10 min
   message: "Too many auth attempts. Please try again later.",
+});
+
+export const sessionLimiter = createLimiter({
+  keyPrefix: "auth-session",
+  windowMs: 15 * 60 * 1000,
+  limit: 500, //500req per 15min
 });

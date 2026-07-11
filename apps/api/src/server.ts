@@ -15,6 +15,7 @@ import { requestIdMiddleware } from "@/middleware/request-id";
 import {
   globalLimiter,
   authLimiter,
+  sessionLimiter,
 } from "@/middleware/rate-limit.middleware";
 
 export class ServerBuilder {
@@ -87,8 +88,11 @@ export class ServerBuilder {
     // Global Rate Limiter
     this.app.use(globalLimiter);
 
-    // Auth Rate Limited
-    this.app.use("/api/auth", authLimiter);
+    // get-session is polled constantly hence separate limiter 
+    this.app.use("/api/auth/get-session", sessionLimiter);
+
+    // Credential-guessing surface -> strict limiter
+    this.app.use(["/api/auth/sign-in", "/api/auth/sign-up"], authLimiter);
 
     return this;
   }
