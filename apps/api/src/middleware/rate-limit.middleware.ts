@@ -1,4 +1,5 @@
-import rateLimit from "express-rate-limit";
+import { createHash } from "node:crypto";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { RedisStore, type RedisReply } from "rate-limit-redis";
 import { getRedis } from "@flowform/redis";
 import type { Request } from "express";
@@ -9,7 +10,30 @@ type LimiterConfig = {
   limit: number;
   message?: string;
   keyGenerator?: (req: Request) => string;
+  skip?: (req: Request) => boolean;
 };
+
+function ipKey(req: Request): string {
+  return ipKeyGenerator(req.ip ?? "unknown");
+}
+
+const SESSION_COOKIE = "better-auth.session_token";
+
+function readSessionToken(req: Request): string | undefined {
+  const header = req.headers.cookie;
+  if (!header) return undefined;
+
+  for (const part of header.split(";")) {
+    const eq = part.indexOf("=");
+    if (eq === -1) continue;
+
+    const name = part.slice(0, eq).trim();
+    if (name === SESSION_COOKIE || name === `__Secure-${SESSION_COOKIE}`) {
+      return part.slice(eq + 1).trim() || undefined;
+    }
+  }
+  return undefined;
+}
 
 function createLimiter(config: LimiterConfig) {
   return rateLimit({
@@ -17,7 +41,8 @@ function createLimiter(config: LimiterConfig) {
     limit: config.limit,
     standardHeaders: "draft-8", // Uses RateLimit instead of X-Rate-Limit
     legacyHeaders: false,
-    keyGenerator: config.keyGenerator ?? ((req) => req.ip ?? "unknown"),
+    keyGenerator: config.keyGenerator ?? ipKey,
+    skip: config.skip ?? (() => false),
     message: {
       success: false,
       message: config.message ?? "Too many requests. Please try again later.",
@@ -32,19 +57,25 @@ function createLimiter(config: LimiterConfig) {
 
 export const globalLimiter = createLimiter({
   keyPrefix: "global",
-  windowMs: 15 * 60 * 1000,
-  limit: 500,
+  windowMs: 60 * 1000,
+  limit: 200,
 });
 
 export const authLimiter = createLimiter({
   keyPrefix: "auth",
-  windowMs: 10 * 60 * 1000,
-  limit: 20 , //20 req per 10 min
-  message: "Too many auth attempts. Please try again later.",
+  windowMs: 2 * 60 * 1000,
+  limit: 10,
+  message: "Too many sign-in attempts.",
 });
 
 export const sessionLimiter = createLimiter({
   keyPrefix: "auth-session",
-  windowMs: 15 * 60 * 1000,
-  limit: 500, //500req per 15min
+  windowMs: 5 * 60 * 1000,
+  limit: 200,
+  skip: (req) => readSessionToken(req) === undefined,
+  keyGenerator: (req) =>
+    createHash("sha256")
+      .update(readSessionToken(req) ?? "")
+      .digest("base64url")
+      .slice(0, 32),
 });

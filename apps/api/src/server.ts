@@ -89,11 +89,9 @@ export class ServerBuilder {
     // Global Rate Limiter
     this.app.use(globalLimiter);
 
-    // get-session is polled constantly hence separate limiter 
     this.app.use("/api/auth/get-session", sessionLimiter);
 
-    // Credential-guessing surface -> strict limiter
-    this.app.use(["/api/auth/sign-in", "/api/auth/sign-up"], authLimiter);
+    this.app.use("/api/auth/sign-in", authLimiter);
 
     return this;
   }

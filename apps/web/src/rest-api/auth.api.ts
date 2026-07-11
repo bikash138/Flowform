@@ -1,5 +1,9 @@
 import env from "@/config/env";
 import { authClient } from "@/lib/auth";
+import {
+  handlePublicApiError,
+  redirectToServerUnavailable,
+} from "@/utils/api-error";
 
 function safeCallbackPath(callbackUrl?: string | null): string {
   if (!callbackUrl) return "/ws";
@@ -8,8 +12,17 @@ function safeCallbackPath(callbackUrl?: string | null): string {
 }
 
 export const signInWithGoogle = async (callbackUrl?: string | null) => {
-  return await authClient.signIn.social({
-    provider: "google",
-    callbackURL: `${env.NEXT_PUBLIC_CLIENT_URL}${safeCallbackPath(callbackUrl)}`,
-  });
+  try {
+    return await authClient.signIn.social(
+      {
+        provider: "google",
+        callbackURL: `${env.NEXT_PUBLIC_CLIENT_URL}${safeCallbackPath(callbackUrl)}`,
+      },
+      {
+        onError: (ctx) => handlePublicApiError("sign-in", ctx.response),
+      },
+    );
+  } catch {
+    redirectToServerUnavailable();
+  }
 };
