@@ -136,6 +136,7 @@ function createAuth() {
 }
 
 export function getAuth() {
+  // Caches the auth instance because it is getting used at two places
   if (!authInstance) {
     authInstance = createAuth();
   }

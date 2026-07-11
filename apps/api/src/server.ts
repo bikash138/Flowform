@@ -12,6 +12,7 @@ import { logger } from "@flowform/logger";
 import { authHandler } from "@flowform/services/auth";
 import { serverRouter, createContext } from "@flowform/trpc/server";
 import { requestIdMiddleware } from "@/middleware/request-id";
+import { assertReadiness } from "@/bootstrap/health";
 import {
   globalLimiter,
   authLimiter,
@@ -108,9 +109,24 @@ export class ServerBuilder {
   }
 
   private setupHealth(): this {
-    this.app.get("/health", (_req, res) => {
+    // Liveness Check
+    this.app.get("/healthz", (_req, res) => {
       res.json({ status: "ok", timestamp: new Date().toISOString() });
     });
+
+    // Readiness Check
+    this.app.get("/readyz", async (_req, res) => {
+      try {
+        await assertReadiness();
+        res.json({ status: "ok" });
+      } catch (err) {
+        res.status(503).json({
+          status: "unavailable",
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+    });
+
     return this;
   }
 

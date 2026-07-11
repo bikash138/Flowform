@@ -1,5 +1,4 @@
 import { router } from "./trpc";
-import { healthRouter } from "./routes/health.route";
 import { formRouter } from "./routes/form.route";
 import { workspaceCoreRouter } from "./routes/workspace/workspace-core.route";
 import { workspaceMembersRouter } from "./routes/workspace/workspace-member.route";
@@ -9,7 +8,6 @@ import { publicRouter } from "./routes/public.route";
 import { billingRouter } from "./routes/billing.route";
 
 export const serverRouter = router({
-  health: healthRouter,
   forms: formRouter,
   workspace: router({
     core: workspaceCoreRouter,
