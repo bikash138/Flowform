@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth";
 import {
   Dialog,
@@ -31,7 +30,6 @@ interface ProfileModalProps {
 }
 
 export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
-  const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const { data: session } = authClient.useSession();
@@ -54,7 +52,7 @@ export function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
         onSuccess: () => {
           toast.success("Signed out successfully");
           onOpenChange(false);
-          router.push("/signup");
+          window.location.href = "/";
         },
       },
     });
