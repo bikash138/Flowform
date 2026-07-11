@@ -176,7 +176,7 @@ function EditorUserMenu({ workspaceId }: { workspaceId: string }) {
   async function handleSignOut() {
     await authClient.signOut({
       fetchOptions: {
-        onSuccess: () => router.push("/signin"),
+        onSuccess: () => router.push("/signup"),
       },
     });
   }

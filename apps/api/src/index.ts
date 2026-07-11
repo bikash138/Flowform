@@ -7,16 +7,7 @@ async function main() {
   try {
     await bootstrap();
 
-    const app = new ServerBuilder()
-      .setupCoreMiddlewares()
-      .setupRateLimiting()
-      .setupAuth()
-      .setupParsers()
-      .setupHealth()
-      .setupOpenApi()
-      .setupRoutes()
-      .setupFallbackHandlers()
-      .build();
+    const app = ServerBuilder.create();
 
     const port = env.http.port;
     app.listen(port, () => {

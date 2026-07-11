@@ -58,7 +58,7 @@ export default function InvitePage({
 
   const handleLoginRedirect = () => {
     router.push(
-      `/signin?callbackUrl=${encodeURIComponent(`/invite/${token}`)}`,
+      `/signup?callbackUrl=${encodeURIComponent(`/invite/${token}`)}`,
     );
   };
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth";
 import {
   Dialog,
@@ -18,7 +17,6 @@ interface SignOutModalProps {
 }
 
 export function SignOutModal({ isOpen, onClose }: SignOutModalProps) {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignOut = async () => {
@@ -27,14 +25,12 @@ export function SignOutModal({ isOpen, onClose }: SignOutModalProps) {
       await authClient.signOut({
         fetchOptions: {
           onSuccess: () => {
-            toast.success("Signed out successfully");
-            router.push("/signin");
+            window.location.href = "/";
           },
         },
       });
-    } catch (error) {
+    } catch {
       toast.error("Failed to sign out. Please try again.");
-    } finally {
       setIsLoading(false);
       onClose();
     }

@@ -1,49 +1,28 @@
 import env from "@/config/env";
 import { authClient } from "@/lib/auth";
-import { toast } from "sonner";
+import {
+  handlePublicApiError,
+  redirectToServerUnavailable,
+} from "@/utils/api-error";
 
-export const signUpWithEmail = async (
-  data: Parameters<typeof authClient.signUp.email>[0],
-) => {
-  return await authClient.signUp.email(data, {
-    onSuccess: (ctx) => {
-      toast.success("Account created successfully!");
-      if (data.callbackURL) {
-        window.location.href = data.callbackURL;
-      }
-    },
-    onError: (ctx) => {
-      toast.error(ctx.error.message || "Sign-up failed");
-    },
-  });
-};
+function safeCallbackPath(callbackUrl?: string | null): string {
+  if (!callbackUrl) return "/ws";
+  if (!callbackUrl.startsWith("/") || callbackUrl.startsWith("//")) return "/ws";
+  return callbackUrl;
+}
 
-export const signInWithEmail = async (
-  data: Parameters<typeof authClient.signIn.email>[0],
-) => {
-  return await authClient.signIn.email(data, {
-    onSuccess: (ctx) => {
-      toast.success("Signed in successfully!");
-      if (data.callbackURL) {
-        window.location.href = data.callbackURL;
-      }
-    },
-    onError: (ctx) => {
-      toast.error(ctx.error.message || "Sign-in failed");
-    },
-  });
-};
-
-export const signInWithGithub = async (callbackUrl?: string) => {
-  return await authClient.signIn.social({
-    provider: "github",
-    callbackURL: callbackUrl || `${env.NEXT_PUBLIC_CLIENT_URL}/ws`,
-  });
-};
-
-export const signInWithGoogle = async (callbackUrl?: string) => {
-  return await authClient.signIn.social({
-    provider: "google",
-    callbackURL: callbackUrl || `${env.NEXT_PUBLIC_CLIENT_URL}/ws`,
-  });
+export const signInWithGoogle = async (callbackUrl?: string | null) => {
+  try {
+    return await authClient.signIn.social(
+      {
+        provider: "google",
+        callbackURL: `${env.NEXT_PUBLIC_CLIENT_URL}${safeCallbackPath(callbackUrl)}`,
+      },
+      {
+        onError: (ctx) => handlePublicApiError("sign-in", ctx.response),
+      },
+    );
+  } catch {
+    redirectToServerUnavailable();
+  }
 };

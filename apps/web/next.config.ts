@@ -15,6 +15,11 @@ const nextConfig: NextConfig = {
         hostname: "*.t3.tigrisfiles.io",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+        pathname: "/**",
+      },
     ],
   },
 };
