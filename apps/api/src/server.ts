@@ -20,29 +20,39 @@ import {
 export class ServerBuilder {
   private app: Express;
 
-  constructor() {
+  private constructor() {
     this.app = express();
   }
 
-  public setupCoreMiddlewares(): this {
+  public static create(): Express {
+    return new ServerBuilder()
+      .setupCoreMiddlewares()
+      .setupRateLimiting()
+      .setupAuth()
+      .setupParsers()
+      .setupHealth()
+      .setupOpenApi()
+      .setupRoutes()
+      .setupFallbackHandlers()
+      .build();
+  }
+
+  private setupCoreMiddlewares(): this {
+    // This makes sure to entertain the X-Forwarded* headers
     this.app.set("trust proxy", 1);
-    const allowedOrigins = new Set([
-      env.http.frontendUrl,
-      env.http.frontendUrl.startsWith("https://www.")
-        ? env.http.frontendUrl.replace("https://www.", "https://")
-        : env.http.frontendUrl.replace("https://", "https://www."),
-    ]);
+    
+    // Setup CORS
     this.app.use(
       cors({
-        origin: (origin, cb) => {
-          // Allow same-origin / server-to-server (no Origin header) and listed origins
-          if (!origin || allowedOrigins.has(origin)) return cb(null, true);
-          cb(new Error(`CORS: origin ${origin} not allowed`));
-        },
+        origin: [new URL(env.http.frontendUrl).origin],
         credentials: true,
       }),
     );
+
+    // Adds request ID to each request for monitoring
     this.app.use(requestIdMiddleware);
+
+    // Adds the logger to track each HTTP request
     this.app.use(
       pinoHttp({
         logger,
@@ -54,17 +64,14 @@ export class ServerBuilder {
           if (res.statusCode >= 400) return "warn";
           return "info";
         },
-        // Trim request log to only method + url
         serializers: {
           req(req) {
             return { method: req.method, url: req.url };
           },
-          // Trim response log to only status code
           res(res) {
             return { statusCode: res.statusCode };
           },
         },
-        // Single-line summary: METHOD /path STATUS Xms
         customSuccessMessage(req, res, responseTime) {
           return `${req.method} ${req.url} ${res.statusCode} ${responseTime}ms`;
         },
@@ -76,7 +83,7 @@ export class ServerBuilder {
     return this;
   }
 
-  public setupRateLimiting(): this {
+  private setupRateLimiting(): this {
     // Global Rate Limiter
     this.app.use(globalLimiter);
 
@@ -86,24 +93,24 @@ export class ServerBuilder {
     return this;
   }
 
-  public setupAuth(): this {
+  private setupAuth(): this {
     this.app.all(["/api/auth", "/api/auth/*path"], authHandler());
     return this;
   }
 
-  public setupParsers(): this {
+  private setupParsers(): this {
     this.app.use(express.json({ limit: "2mb" }));
     return this;
   }
 
-  public setupHealth(): this {
+  private setupHealth(): this {
     this.app.get("/health", (_req, res) => {
       res.json({ status: "ok", timestamp: new Date().toISOString() });
     });
     return this;
   }
 
-  public setupOpenApi(): this {
+  private setupOpenApi(): this {
     const openApiDoc = generateOpenApiDocument(serverRouter, {
       title: "Flowform  API",
       version: "1.0.0",
@@ -116,7 +123,7 @@ export class ServerBuilder {
     return this;
   }
 
-  public setupRoutes(): this {
+  private setupRoutes(): this {
     this.app.use(
       "/api",
       createOpenApiExpressMiddleware({
@@ -141,7 +148,7 @@ export class ServerBuilder {
     return this;
   }
 
-  public setupFallbackHandlers(): this {
+  private setupFallbackHandlers(): this {
     this.app.use((req, res) => {
       res.status(404).json({
         success: false,
@@ -151,7 +158,7 @@ export class ServerBuilder {
     return this;
   }
 
-  public build(): Express {
+  private build(): Express {
     return this.app;
   }
 }
