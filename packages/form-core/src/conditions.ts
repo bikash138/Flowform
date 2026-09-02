@@ -85,10 +85,65 @@ import type { AnswerMap, AnswerValue, LogicRule } from "./types";
  *   rule for it to hang off, and its trigger is its own.
  *
  *
- * ── JUMP ────────────────────────────────────────────────────────────────────
+ * ── JUMP — skip a whole BRANCH, not one question ────────────────────────────
  *
- * Targets a PAGE, not a question. Fires when leaving the page holding its
- * trigger — and only if that trigger is itself visible (see resolve.ts).
+ * SHOW/HIDE change what is on a screen the respondent is already looking at.
+ * JUMP sends them to a different PAGE entirely.
+ *
+ * Two things about it are easy to get wrong:
+ *
+ *   1. It fires when they LEAVE the page holding its trigger — NOT the moment
+ *      they answer. On a page with three questions they still answer the other
+ *      two, press Next, and only then does the jump route them.
+ *
+ *   2. It only fires if the trigger question is itself VISIBLE. A hidden
+ *      question cannot teleport anyone — otherwise a stale answer to a question
+ *      that got hidden would silently reroute the whole form.
+ *
+ * EXAMPLE — the customer / prospect split:
+ *
+ *   pg_intro      Q: "Are you already a customer?"  [Yes] [No]
+ *   pg_usage      …six pages of customer questions…
+ *   pg_features   …
+ *   pg_prospect   Q: "What are you using instead?"     ← for non-customers
+ *   pg_contact    Q: "Your email?"                     ← EVERYONE ends up here
+ *
+ *   { triggerId: "q_is_customer", condition: "equals", value: false,
+ *     action: "JUMP", targetId: "pg_prospect" }
+ *
+ *   A non-customer leaves pg_intro and lands straight on pg_prospect. The
+ *   customer pages are not hidden — they are never ENTERED. Their questions are
+ *   never even looked at, so a `required: true` question sitting on one of them
+ *   is simply never demanded.
+ *
+ *   That last point is the whole reason validation must replay the walk: you
+ *   cannot ask "is this question required?" without first asking "was this
+ *   person ever on that page?"
+ *
+ * ── …and defaultNext, which is what lets a branch REJOIN ────────────────────
+ *
+ * A JUMP makes the path diverge. Something has to make it converge again, or the
+ * customer finishing pg_features would fall straight into pg_prospect — the page
+ * meant for people who are NOT customers.
+ *
+ * That is `page.defaultNext` — "after this page, always go to X", regardless of
+ * any answer:
+ *
+ *   pg_features.defaultNext = "pg_contact"    // customers rejoin the shared tail
+ *
+ * Precedence when leaving a page (see nextPageId in resolve.ts):
+ *
+ *   1. the FIRST matching JUMP whose trigger is on this page AND is visible
+ *   2. page.defaultNext
+ *   3. the next page in document order
+ *
+ * NOTE: none of the above is implemented in THIS file. `matches()` is
+ * action-blind — it answers only "did this rule's condition fire?", and does not
+ * read rule.action at all. WHAT a fired rule does is resolve.ts's job:
+ * isVisible() for SHOW/HIDE, isRequired() for REQUIRE, nextPageId() for JUMP.
+ *
+ * That split is why a new operator works for all four actions for free, and why
+ * a new action never has to touch this file.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
