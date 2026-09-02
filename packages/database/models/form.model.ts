@@ -71,6 +71,17 @@ export type FormPage = {
   layout?: PageLayout;
   coverImage?: string | null;
   imagePosition?: "left" | "right";
+  /**
+   * Where this page hands off to when no conditional JUMP fires.
+   * Absent === "the next page in document order".
+   *
+   * This is what lets branches REJOIN. Without it a branch can diverge but never
+   * merge: a customer finishing the customer pages would fall straight into the
+   * prospect pages, because "next in order" is all there is.
+   *
+   * Precedence when leaving a page: a matching JUMP > defaultNext > next in order.
+   */
+  defaultNext?: string | "END";
 };
 
 export type StartPage = {

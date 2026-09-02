@@ -1,0 +1,22 @@
+{
+  "name": "@flowform/form-core",
+  "version": "1.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@flowform/database": "workspace:*",
+    "zod": "^4.4.2"
+  },
+  "devDependencies": {
+    "@flowform/typescript-config": "workspace:*",
+    "typescript": "^6.0.2",
+    "vitest": "^3.2.4"
+  }
+}

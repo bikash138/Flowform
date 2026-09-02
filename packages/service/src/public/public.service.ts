@@ -1,13 +1,12 @@
 import { TRPCError } from "@trpc/server";
-import { z } from "zod";
 import { createLogger } from "@flowform/logger";
+import { validateAnswers } from "@flowform/form-core";
 import type {
   FormSettings,
   FormTheme,
   FormFont,
   FormContent,
   AnswerEntry,
-  Question,
 } from "@flowform/database/models";
 import { BillingService } from "../billing/billing.service";
 import { PublicFormRepository } from "./public.repo";
@@ -47,99 +46,22 @@ const ACTIVE_STATUSES = new Set(["ACTIVE", "TRIALING"]);
 const MIN_MS_PER_QUESTION = 800;
 const MAX_MS_PER_QUESTION = 60_000;
 
-// Answer Validation
+// Answer validation now lives in @flowform/form-core, so the server and the
+// renderer run the SAME code. The old implementation here flattened every page
+// and required every `required` question — which made any form using HIDE or
+// JUMP impossible to submit, because it demanded answers to questions the
+// respondent was never shown.
 
-function buildAnswerSchema(q: Question): z.ZodTypeAny {
-  switch (q.type) {
-    case "short_text":
-    case "long_text": {
-      let s = z.string().min(1);
-      if (q.config?.maxLength) s = s.max(q.config.maxLength);
-      return s;
-    }
-
-    case "email":
-      return z.email();
-
-    case "number": {
-      let s = z.coerce.number();
-      if (q.config?.min !== undefined) s = s.min(q.config.min);
-      if (q.config?.max !== undefined) s = s.max(q.config.max);
-      return s;
-    }
-
-    case "radio":
-    case "select": {
-      const validIds = new Set(q.options?.map((o) => o.id) ?? []);
-      return z.string().refine((v) => validIds.has(v));
-    }
-
-    case "checkbox": {
-      const validIds = new Set(q.options?.map((o) => o.id) ?? []);
-      return z
-        .array(z.string().min(1))
-        .min(1)
-        .refine((arr) => arr.every((v) => validIds.has(v)));
-    }
-
-    case "rating": {
-      const scale = q.config?.scale ?? 5;
-      return z.number().int().min(1).max(scale);
-    }
-
-    case "date":
-      return z.string().refine((v) => !isNaN(Date.parse(v)));
-
-    case "phone":
-      // Accept common international formats: +1 (555) 000-0000, +44 20 7946 0958, etc.
-      // Strip spaces, dashes, and parens then require + followed by 7–15 digits.
-      return z.string().refine((v) => /^\+[1-9]\d{6,14}$/.test(v.trim().replace(/[\s\-().]/g, "")));
-
-    case "url":
-      return z.url();
-
-    case "yes_no":
-      return z.boolean();
-
-    default:
-      return z.unknown();
+/**
+ * Carries per-question errors out to the client so the form can highlight the
+ * offending field instead of showing an opaque "validation failed" toast.
+ * Surfaced as `error.data.fieldErrors` by the tRPC errorFormatter.
+ */
+export class ValidationError extends Error {
+  constructor(public readonly fieldErrors: Record<string, string>) {
+    super("validation_failed");
+    this.name = "ValidationError";
   }
-}
-
-function validateAnswers(
-  answers: AnswerEntry[],
-  content: FormContent,
-): "ok" | "validation_failed" {
-  const questionMap = new Map<string, Question>();
-  for (const page of content.pages) {
-    for (const q of page.questions) {
-      questionMap.set(q.id, q);
-    }
-  }
-
-  for (const answer of answers) {
-    const q = questionMap.get(answer.questionId);
-    if (!q) return "validation_failed";
-    if (answer.type !== q.type) return "validation_failed";
-  }
-
-  const answeredMap = new Map(answers.map((a) => [a.questionId, a.value]));
-
-  for (const [qId, q] of questionMap) {
-    const val = answeredMap.get(qId) ?? null;
-    const isEmpty =
-      val === null ||
-      val === undefined ||
-      (typeof val === "string" && val.trim() === "") ||
-      (Array.isArray(val) && val.length === 0);
-
-    if (q.required && isEmpty) return "validation_failed";
-    if (isEmpty) continue;
-
-    if (!buildAnswerSchema(q).safeParse(val).success) return "validation_failed";
-  }
-
-  return "ok";
 }
 
 export class PublicFormService {
@@ -507,15 +429,23 @@ export class PublicFormService {
 
     const clampedTimeMs = Math.min(timeTakenMs, maxTime);
 
-    // LAYER 6: Answer validation against published snapshot
-    const validationResult = validateAnswers(
-      input.answers as AnswerEntry[],
-      content,
-    );
-    if (validationResult !== "ok") {
+    // LAYER 6: Answer validation against the published snapshot.
+    //
+    // form-core replays the respondent's journey from their own answers, so it
+    // knows which questions they were actually asked. It then:
+    //   - requires only the questions on THEIR path (a skipped branch is fine)
+    //   - rejects answers to questions they could never have reached (bot stuffing)
+    //   - returns errors keyed by questionId, so the UI can point at the field
+    const validation = validateAnswers(content, input.answers as AnswerEntry[]);
+    if (!validation.ok) {
+      log.warn(
+        { formId: input.formId, responseId: input.responseId, errors: validation.errors },
+        "Answer validation failed",
+      );
       throw new TRPCError({
         code: "UNPROCESSABLE_CONTENT",
         message: "validation_failed",
+        cause: new ValidationError(validation.errors),
       });
     }
 

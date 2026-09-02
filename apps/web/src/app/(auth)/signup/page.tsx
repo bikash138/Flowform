@@ -35,7 +35,7 @@ export default function SignUpPage() {
         </header>
 
         <main className="flex flex-1 items-center justify-center px-5 py-8 sm:px-8">
-          <div className="w-full max-w-[360px] flex flex-col items-center text-center">
+          <div className="w-full max-w-90 flex flex-col items-center text-center">
             <Link
               href="/"
               className="flex items-center gap-2 mb-6"

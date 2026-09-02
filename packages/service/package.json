@@ -23,6 +23,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1053.0",
     "@flowform/database": "workspace:*",
     "@flowform/env": "workspace:*",
+    "@flowform/form-core": "workspace:*",
     "@flowform/logger": "workspace:*",
     "@flowform/redis": "workspace:*",
     "@flowform/utils": "workspace:*",
