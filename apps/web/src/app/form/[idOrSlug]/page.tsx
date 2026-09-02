@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import type { FormContent, FormTheme, FormFont, Question, EndPageAnimation } from "@flowform/database/models";
 import type { PublicFormSettings } from "@flowform/services/public";
+import { resolve, nextPageAfter, conditionallyRevealed, type Resolved } from "@flowform/form-core";
 import {
   usePublicForm,
   useTrackView,
@@ -21,6 +22,9 @@ type AnswerValue = string | number | string[] | boolean | null;
 type Answers = Record<string, AnswerValue>;
 type Errors = Record<string, string>;
 type ViewState = "start" | "questions" | "end";
+
+/** Choice questions advance the conversational card on their own — unless they reveal a follow-up. */
+const AUTO_ADVANCE_TYPES = new Set<Question["type"]>(["radio", "rating", "yes_no"]);
 
 // ─── Theme / font helpers ─────────────────────────────────────────────────────
 
@@ -448,14 +452,16 @@ function GateScreen({
 // ─── Conversational question page ─────────────────────────────────────────────
 
 function ConvQuestionPage({
-  currentPage, pageIndex, pagesLength, conversationalQuestion,
+  currentPage, pageIndex, pagesLength, visibleQuestions, requiredIds,
   answers, errors, prevDisabled, showNextButton, isLastPage,
   theme, settings, pageFg, isSubmitting,
   onPrev, onNext, onAnswer,
 }: {
   currentPage: FormContent["pages"][number] | undefined;
   pageIndex: number; pagesLength: number;
-  conversationalQuestion: Question | undefined;
+  /** The page's lead question plus any follow-ups its answer has revealed. */
+  visibleQuestions: Question[];
+  requiredIds: Set<string>;
   answers: Answers; errors: Errors;
   prevDisabled: boolean; showNextButton: boolean; isLastPage: boolean;
   theme: FormTheme; settings: PublicFormSettings;
@@ -481,6 +487,8 @@ function ConvQuestionPage({
   }
 
   function QuestionContent() {
+    const [lead, ...followUps] = visibleQuestions;
+
     return (
       <>
         {settings.progressBar.enabled && (
@@ -491,27 +499,54 @@ function ConvQuestionPage({
         <p className="text-xs font-bold mb-3" style={{ color: "var(--primary)", opacity: 0.7 }}>
           {pageIndex + 1} / {pagesLength}
         </p>
-        {conversationalQuestion ? (
-          <div id={`q-${conversationalQuestion.id}`}>
-            <label className="text-xl font-bold mb-1 block leading-snug" style={{ color: "var(--form-label)" }}>
-              {conversationalQuestion.label || "Untitled question"}
-              {conversationalQuestion.required && <span style={{ color: "var(--primary)" }} className="ml-0.5">*</span>}
-            </label>
-            <div className="mt-3">
-              <InteractiveField
-                question={conversationalQuestion}
-                value={answers[conversationalQuestion.id] ?? null}
-                onChange={(v) => onAnswer(conversationalQuestion.id, v, conversationalQuestion.type)}
-                hasError={!!errors[conversationalQuestion.id]}
-              />
+        {lead ? (
+          <>
+            {/* The page's lead question, rendered large. */}
+            <div id={`q-${lead.id}`}>
+              <label className="text-xl font-bold mb-1 block leading-snug" style={{ color: "var(--form-label)" }}>
+                {lead.label || "Untitled question"}
+                {requiredIds.has(lead.id) && <span style={{ color: "var(--primary)" }} className="ml-0.5">*</span>}
+              </label>
+              <div className="mt-3">
+                <InteractiveField
+                  question={lead}
+                  value={answers[lead.id] ?? null}
+                  onChange={(v) => onAnswer(lead.id, v, lead.type)}
+                  hasError={!!errors[lead.id]}
+                />
+              </div>
+              {errors[lead.id] && (
+                <p className="mt-2 text-xs" style={{ color: "#ef4444" }}>{errors[lead.id]}</p>
+              )}
             </div>
-            {errors[conversationalQuestion.id] && (
-              <p className="mt-2 text-xs" style={{ color: "#ef4444" }}>{errors[conversationalQuestion.id]}</p>
-            )}
-            {(conversationalQuestion.type === "radio" || conversationalQuestion.type === "rating" || conversationalQuestion.type === "yes_no") && (
+
+            {/* Follow-ups revealed by the lead question's answer. They slide in
+                underneath, on the SAME card — a reveal is a same-screen event. */}
+            {followUps.map((q) => (
+              <div key={q.id} id={`q-${q.id}`} className="mt-5 pl-3 ff-reveal" style={{ borderLeft: "2px solid var(--primary)" }}>
+                <label className="text-sm font-semibold mb-2 block" style={{ color: "var(--form-label)" }}>
+                  {q.label || "Untitled question"}
+                  {requiredIds.has(q.id) && <span style={{ color: "var(--primary)" }} className="ml-0.5">*</span>}
+                </label>
+                <InteractiveField
+                  question={q}
+                  value={answers[q.id] ?? null}
+                  onChange={(v) => onAnswer(q.id, v, q.type)}
+                  hasError={!!errors[q.id]}
+                />
+                {errors[q.id] && (
+                  <p className="mt-1.5 text-xs" style={{ color: "#ef4444" }}>{errors[q.id]}</p>
+                )}
+              </div>
+            ))}
+
+            {/* Auto-advance only applies while the lead question stands alone.
+                Once it reveals a follow-up, the respondent needs to answer that
+                too — so we show Next instead of skipping past it. */}
+            {followUps.length === 0 && AUTO_ADVANCE_TYPES.has(lead.type) && (
               <p className="mt-3 text-xs opacity-50" style={{ color: "var(--muted-foreground)" }}>Advances automatically on selection</p>
             )}
-          </div>
+          </>
         ) : (
           <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>No question on this page.</p>
         )}
@@ -584,7 +619,11 @@ export default function PublicFormPage() {
 
   // ── Form interaction state ───────────────────────────────────────────────────
   const [view, setView] = useState<ViewState>("start");
-  const [pageIndex, setPageIndex] = useState(0);
+  // A page ID, not an index. With JUMP, "the next page" is no longer "index + 1".
+  const [pageId, setPageId] = useState<string | null>(null);
+  // Breadcrumbs. JUMPs are NOT invertible — many pages can jump into the same
+  // target — so Back cannot be derived. It has to be remembered.
+  const [history, setHistory] = useState<string[]>([]);
   const [answers, setAnswers] = useState<Answers>({});
   const [errors, setErrors] = useState<Errors>({});
   const [emailValue, setEmailValue] = useState("");
@@ -775,17 +814,48 @@ export default function PublicFormPage() {
   const isConversational = settings.formLayout === "conversational";
   const hasStartPage = !!(content.startPage?.heading?.trim());
 
-  const currentPage   = pages[pageIndex];
-  const isFirstPage   = pageIndex === 0;
-  const isLastPage    = pageIndex === pages.length - 1;
-  // Prev is disabled when: on first question page AND already started (can't go back to start screen)
-  const prevDisabled  = isFirstPage && hasStarted;
+  // ── THE WALK ────────────────────────────────────────────────────────────────
+  // Replay this respondent's journey from their current answers. Recomputed on
+  // every render (it is pure and microseconds fast), so the moment they change
+  // an answer, hidden questions appear/disappear and the path re-routes.
+  //
+  // The SERVER runs this exact same function on submit. That is why the two can
+  // never disagree about which questions were asked.
+  const resolved: Resolved = resolve(content, answers);
 
-  const AUTO_ADVANCE_TYPES = new Set<Question["type"]>(["radio", "rating", "yes_no"]);
-  const conversationalQuestion = currentPage?.questions[0];
-  const convType = conversationalQuestion?.type;
+  // Which questions are genuine follow-ups — hidden by default and REVEALED by
+  // an answer above them? A static property of the FORM, not of this walk, so it
+  // comes from the logic graph rather than resolve(). Used purely to indent them.
+  //
+  // HIDE-controlled questions are deliberately excluded: they are visible by
+  // default and merely suppressed for one group, so they are normal questions
+  // with an exception — not follow-ups. Indenting them would be a lie.
+  const isFollowUp = conditionallyRevealed(content);
+
+  const currentPage = pages.find((p) => p.id === pageId);
+
+  // Only the questions this person can actually see, in document order.
+  const visibleQuestions = (currentPage?.questions ?? [])
+    .filter((q) => resolved.visibleQuestionIds.has(q.id))
+    .sort((a, b) => a.order - b.order);
+
+  // Position along the path THEY are walking — not the raw page list. A form
+  // with 20 pages may only be 6 pages long for this particular person.
+  const pathIndex   = pageId ? resolved.path.indexOf(pageId) : -1;
+  const pathLength  = resolved.path.length;
+  const isLastPage  = pathIndex !== -1 && pathIndex === pathLength - 1;
+
+  // Back is driven by the breadcrumb trail, not by page order.
+  const prevDisabled = history.length === 0;
+
+  // Auto-advance only while the lead question stands alone. Once it reveals a
+  // follow-up, skipping the card would skip the follow-up too.
+  const leadQuestion = visibleQuestions[0];
   const showConvNextButton =
-    isConversational && view === "questions" && !!conversationalQuestion && !AUTO_ADVANCE_TYPES.has(convType!);
+    isConversational &&
+    view === "questions" &&
+    !!leadQuestion &&
+    !(visibleQuestions.length === 1 && AUTO_ADVANCE_TYPES.has(leadQuestion.type));
 
   // ─── Validation ───────────────────────────────────────────────────────────────
 
@@ -793,13 +863,16 @@ export default function PublicFormPage() {
     if (!currentPage) return true;
     const newErrors: Errors = {};
 
-    for (const q of currentPage.questions) {
+    // Only the questions they can SEE, and `required` comes from the walk —
+    // so a REQUIRE rule that fired ("you rated us 1 star, tell us why") is
+    // enforced, and a hidden question is never demanded.
+    for (const q of visibleQuestions) {
       const ans = answers[q.id];
       const isEmpty = ans === null || ans === undefined ||
         (typeof ans === "string" && ans.trim() === "") ||
         (Array.isArray(ans) && ans.length === 0);
 
-      if (q.required && isEmpty) { newErrors[q.id] = "This field is required"; continue; }
+      if (resolved.requiredQuestionIds.has(q.id) && isEmpty) { newErrors[q.id] = "This field is required"; continue; }
       if (isEmpty) continue;
 
       if (q.type === "email" && typeof ans === "string") {
@@ -847,33 +920,39 @@ export default function PublicFormPage() {
       });
       setResponseId(result.responseId);
       setHasStarted(true);
-      setPageIndex(0);
-      setView(pages.length === 0 ? "end" : "questions");
-      if (pages.length === 0) setAnimationKey((k) => k + 1);
+      // Start at the first page ON THE PATH, not necessarily pages[0] — a form
+      // can route away from its first page before anyone answers anything.
+      setPageId(resolved.path[0] ?? null);
+      setHistory([]);
+      setView(resolved.path.length === 0 ? "end" : "questions");
+      if (resolved.path.length === 0) setAnimationKey((k) => k + 1);
     } catch {
       // error toast already shown by the hook
     }
   }
 
   function handlePrev() {
-    if (prevDisabled) return;
-    if (!isFirstPage) {
-      setPageIndex((p) => p - 1);
-      setErrors({});
-    } else if (hasStartPage && !hasStarted) {
-      setView("start");
-      setErrors({});
-    }
+    // Pop a breadcrumb. We cannot compute the previous page — a JUMP is a
+    // one-way door, and several pages may lead into this one.
+    const prev = history[history.length - 1];
+    if (!prev) return;
+    setHistory((h) => h.slice(0, -1));
+    setPageId(prev);
+    setErrors({});
+  }
+
+  /** Walk forward from `pageId` using `next` answers, or submit if the path ends. */
+  function advance(next: Answers) {
+    const target = pageId ? nextPageAfter(content!, next, pageId) : null;
+    if (!target) { doSubmit(next); return; }
+    setHistory((h) => [...h, pageId!]);
+    setPageId(target);
+    setErrors({});
   }
 
   function handleNext() {
     if (!validateCurrentPage()) return;
-    if (isLastPage) {
-      doSubmit();
-    } else {
-      setPageIndex((p) => p + 1);
-      setErrors({});
-    }
+    advance(answers);
   }
 
   function doSubmit(pendingAnswers?: Answers) {
@@ -884,13 +963,20 @@ export default function PublicFormPage() {
     // closure yet (stale closure from the render that created the setTimeout).
     const merged = pendingAnswers ? { ...answers, ...pendingAnswers } : answers;
 
-    const answerEntries = pages.flatMap((page) =>
-      page.questions.map((q) => ({
+    // Send ONLY what this person was actually asked. Answers to questions that
+    // were hidden or jumped over are dropped here — including stale ones they
+    // typed before changing their mind. The server re-runs the same walk and
+    // rejects anything it did not expect.
+    const { visibleQuestionIds } = resolve(content!, merged);
+
+    const answerEntries = pages
+      .flatMap((page) => page.questions)
+      .filter((q) => visibleQuestionIds.has(q.id))
+      .map((q) => ({
         questionId: q.id,
         type: q.type,
         value: merged[q.id] ?? null,
-      }))
-    );
+      }));
 
     submitResponse(
       {
@@ -918,14 +1004,22 @@ export default function PublicFormPage() {
 
   function setAnswerWithAutoAdvance(questionId: string, val: AnswerValue, type: Question["type"]) {
     setAnswer(questionId, val);
-    if (isConversational && AUTO_ADVANCE_TYPES.has(type) && val !== null) {
-      if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
-      const pendingAnswers: Answers = { [questionId]: val };
-      autoAdvanceTimer.current = setTimeout(() => {
-        if (isLastPage) doSubmit(pendingAnswers);
-        else { setPageIndex((p) => p + 1); setErrors({}); }
-      }, 450);
-    }
+
+    if (!isConversational || !AUTO_ADVANCE_TYPES.has(type) || val === null) return;
+
+    // Did answering this REVEAL a follow-up on the same card? If so, do not
+    // skip past it — the whole point of a reveal is that they answer it too.
+    const next: Answers = { ...answers, [questionId]: val };
+    const after = resolve(content!, next);
+    const stillOnPage = (currentPage?.questions ?? [])
+      .filter((q) => after.visibleQuestionIds.has(q.id))
+      .sort((a, b) => a.order - b.order);
+
+    const isLastOnPage = stillOnPage[stillOnPage.length - 1]?.id === questionId;
+    if (!isLastOnPage) return; // a follow-up appeared below — stay put
+
+    if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+    autoAdvanceTimer.current = setTimeout(() => advance(next), 450);
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -939,6 +1033,8 @@ export default function PublicFormPage() {
           @import url('https://fonts.googleapis.com/css2?family=${googleFontSlug}:wght@400;500;600;700&display=swap');
           @keyframes ff-card-enter { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
           .ff-card-enter { animation: ff-card-enter 0.3s cubic-bezier(0.4,0,0.2,1) forwards; }
+          @keyframes ff-reveal { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+          .ff-reveal { animation: ff-reveal 0.25s cubic-bezier(0.4,0,0.2,1) forwards; }
         `}</style>
 
         {/* honeypot */}
@@ -955,7 +1051,7 @@ export default function PublicFormPage() {
             <div
               className="flex-1 w-full md:flex-none md:max-w-4xl md:rounded-2xl md:h-[560px] overflow-hidden shadow-xl flex flex-col"
               style={{ ...themeVars, backgroundColor: theme.backgroundColor }}
-              key={`${view}-${pageIndex}`}
+              key={`${view}-${pageId}`}
             >
               {/* Start page */}
               {view === "start" && hasStartPage && (
@@ -1015,11 +1111,12 @@ export default function PublicFormPage() {
               {/* Questions */}
               {view === "questions" && (
                 <ConvQuestionPage
-                  key={`q-${pageIndex}`}
+                  key={`q-${pageId}`}
                   currentPage={currentPage}
-                  pageIndex={pageIndex}
-                  pagesLength={pages.length}
-                  conversationalQuestion={conversationalQuestion}
+                  pageIndex={pathIndex}
+                  pagesLength={pathLength}
+                  visibleQuestions={visibleQuestions}
+                  requiredIds={resolved.requiredQuestionIds}
                   answers={answers}
                   errors={errors}
                   prevDisabled={prevDisabled}
@@ -1059,6 +1156,8 @@ export default function PublicFormPage() {
         @import url('https://fonts.googleapis.com/css2?family=${googleFontSlug}:wght@400;500;600;700&display=swap');
         @keyframes ff-enter { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
         .ff-enter { animation: ff-enter 0.28s cubic-bezier(0.4,0,0.2,1) forwards; }
+        @keyframes ff-reveal { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+        .ff-reveal { animation: ff-reveal 0.25s cubic-bezier(0.4,0,0.2,1) forwards; }
       `}</style>
 
       {/* honeypot */}
@@ -1075,7 +1174,7 @@ export default function PublicFormPage() {
             {/* Form card */}
             <div className="w-full rounded-xl border shadow-md overflow-hidden"
               style={{ backgroundColor: theme.backgroundColor, borderColor: "var(--form-input-border)" }}>
-              <div key={`${view}-${pageIndex}`} className="ff-enter">
+              <div key={`${view}-${pageId}`} className="ff-enter">
 
                 {/* Start page */}
                 {view === "start" && hasStartPage && (
@@ -1109,32 +1208,42 @@ export default function PublicFormPage() {
                   </div>
                 )}
 
-                {/* Questions */}
+                {/* Questions — only the ones the walk says this person can see.
+                    A revealed follow-up gets an accent rail so it reads as a
+                    child of the question above it. */}
                 {view === "questions" && (
                   <div className="p-6 md:p-8">
-                    {!currentPage || currentPage.questions.length === 0 ? (
+                    {visibleQuestions.length === 0 ? (
                       <div className="flex items-center justify-center py-16">
                         <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>No questions on this page.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col gap-7">
-                        {currentPage.questions.map((question) => (
-                          <div key={question.id} id={`q-${question.id}`}>
-                            <label className="text-sm font-semibold mb-2.5 block" style={{ color: "var(--form-label)" }}>
-                              {question.label || "Untitled question"}
-                              {question.required && <span style={{ color: "var(--primary)" }} className="ml-0.5">*</span>}
-                            </label>
-                            <InteractiveField
-                              question={question}
-                              value={answers[question.id] ?? null}
-                              onChange={(v) => setAnswer(question.id, v)}
-                              hasError={!!errors[question.id]}
-                            />
-                            {errors[question.id] && (
-                              <p className="mt-1.5 text-xs" style={{ color: "#ef4444" }}>{errors[question.id]}</p>
-                            )}
-                          </div>
-                        ))}
+                        {visibleQuestions.map((question) => {
+                          const isRevealed = isFollowUp.has(question.id);
+                          return (
+                            <div
+                              key={question.id}
+                              id={`q-${question.id}`}
+                              className={isRevealed ? "pl-3 ff-reveal" : undefined}
+                              style={isRevealed ? { borderLeft: "2px solid var(--primary)" } : undefined}
+                            >
+                              <label className="text-sm font-semibold mb-2.5 block" style={{ color: "var(--form-label)" }}>
+                                {question.label || "Untitled question"}
+                                {resolved.requiredQuestionIds.has(question.id) && <span style={{ color: "var(--primary)" }} className="ml-0.5">*</span>}
+                              </label>
+                              <InteractiveField
+                                question={question}
+                                value={answers[question.id] ?? null}
+                                onChange={(v) => setAnswer(question.id, v)}
+                                hasError={!!errors[question.id]}
+                              />
+                              {errors[question.id] && (
+                                <p className="mt-1.5 text-xs" style={{ color: "#ef4444" }}>{errors[question.id]}</p>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -1169,8 +1278,10 @@ export default function PublicFormPage() {
             {/* Nav below card */}
             {view === "questions" && (
               <div className="mt-3 space-y-2">
-                {settings.progressBar.enabled && pages.length > 0 && (
-                  <ProgressIndicator settings={settings} pageIndex={pageIndex} totalPages={pages.length} pageFg={pageFg} />
+                {/* Progress along THEIR path, not the raw page count — a 20-page
+                    form may only be 6 pages long for this particular person. */}
+                {settings.progressBar.enabled && pathLength > 0 && (
+                  <ProgressIndicator settings={settings} pageIndex={pathIndex} totalPages={pathLength} pageFg={pageFg} />
                 )}
                 <div className="flex items-center gap-3">
                   <button type="button" onClick={handlePrev} disabled={prevDisabled}

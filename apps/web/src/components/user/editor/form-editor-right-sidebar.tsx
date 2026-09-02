@@ -32,6 +32,8 @@ import {
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useFormEditorStore } from "@/store/use-form-editor-store";
+import { QuestionLogicPanel, QuestionRequiredControl } from "./question-logic-panel";
+import { PageFlowPanel } from "./page-flow-panel";
 import type { EndPageAnimation, FormSettings } from "@flowform/database/models";
 import { cn } from "@/lib/utils";
 import { convertToWebp } from "@/lib/image";
@@ -232,7 +234,6 @@ function QuestionPanel({
   const addOption      = useFormEditorStore((s) => s.addOption);
   const updateOption   = useFormEditorStore((s) => s.updateOption);
   const deleteOption   = useFormEditorStore((s) => s.deleteOption);
-  const deleteQuestion = useFormEditorStore((s) => s.deleteQuestion);
 
   const isConversational = (form?.settings as FormSettings | undefined)?.formLayout === "conversational";
 
@@ -290,15 +291,11 @@ function QuestionPanel({
         </div>
       )}
 
-      {/* Required */}
-      <div className="flex items-center justify-between">
-        <Label className="text-xs font-semibold cursor-pointer">Required</Label>
-        <Switch
-          checked={question.required}
-          onCheckedChange={(checked) => updateQuestion(pageId, question.id, { required: checked })}
-          className="data-[state=checked]:bg-primary"
-        />
-      </div>
+      {/* Required — Never / Always / When…
+          "When…" writes a standalone REQUIRE rule with its own condition, for the
+          case the boolean cannot express: a question EVERYONE sees, but only some
+          respondents must answer. */}
+      <QuestionRequiredControl pageId={pageId} question={question} />
 
       {/* ── Type-specific settings ─────────────────────────────────────── */}
 
@@ -440,16 +437,29 @@ function QuestionPanel({
         </>
       )}
 
-      {/* Delete */}
-      <div className="pt-4 border-t border-border">
-        <button
-          onClick={() => deleteQuestion(pageId, question.id)}
-          className="group w-full flex items-center justify-center gap-2 text-xs font-bold text-red-500 hover:text-white bg-red-500/5 hover:bg-red-500 py-2.5 rounded-xl border border-red-500/10 hover:border-red-500 transition-all duration-200 active:scale-[0.98]"
-        >
-          <Trash2 className="size-3.5" />
-          Delete question
-        </button>
-      </div>
+      {/* Conditional logic — "only show this question when …" */}
+      <QuestionLogicPanel pageId={pageId} question={question} />
+
+      {/* Delete lives in the panel's pinned footer, not here — it must stay
+          reachable no matter how long the options list grows. */}
+    </div>
+  );
+}
+
+// ─── Pinned footer: delete the selected question ──────────────────────────────
+
+function DeleteQuestionFooter({ pageId, questionId }: { pageId: string; questionId: string }) {
+  const deleteQuestion = useFormEditorStore((s) => s.deleteQuestion);
+
+  return (
+    <div className="shrink-0 border-t border-border bg-background p-4">
+      <button
+        onClick={() => deleteQuestion(pageId, questionId)}
+        className="group w-full flex items-center justify-center gap-2 text-xs font-bold text-red-500 hover:text-white bg-red-500/5 hover:bg-red-500 py-2.5 rounded-xl border border-red-500/10 hover:border-red-500 transition-all duration-200 active:scale-[0.98]"
+      >
+        <Trash2 className="size-3.5" />
+        Delete question
+      </button>
     </div>
   );
 }
@@ -632,8 +642,12 @@ export function FormPropertiesPanel() {
   const selectedItem = useFormEditorStore((s) => s.selectedItem);
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
+    // min-h-0 matters on both the column and the scroll region below. A flex
+    // child defaults to `min-height: auto`, so it refuses to shrink below its
+    // content — the ScrollArea would grow past the sidebar and its viewport
+    // would never scroll, silently clipping anything long (e.g. many options).
+    <div className="flex flex-col h-full min-h-0">
+      {/* Header — pinned */}
       <div className="h-11 px-4 flex items-center gap-2 border-b border-border shrink-0">
         <SlidersHorizontal className="size-3.5 text-muted-foreground" />
         <span className="text-xs font-bold text-foreground uppercase tracking-widest">
@@ -641,7 +655,8 @@ export function FormPropertiesPanel() {
         </span>
       </div>
 
-      <ScrollArea className="flex-1">
+      {/* Body — the only part that scrolls */}
+      <ScrollArea className="flex-1 min-h-0">
         <div className="p-4">
           {/* Empty state */}
           {!selectedItem && (
@@ -650,7 +665,7 @@ export function FormPropertiesPanel() {
                 <MousePointerClick className="size-4 text-muted-foreground/50" />
               </div>
               <p className="text-sm text-muted-foreground leading-snug">
-                Select a question, start page, or end page to edit its properties.
+                Select a page, question, start page, or end page to edit its properties.
               </p>
             </div>
           )}
@@ -658,6 +673,9 @@ export function FormPropertiesPanel() {
           {selectedItem?.type === "startPage" && <StartPagePanel />}
 
           {selectedItem?.type === "endPage" && <EndPagePanel />}
+
+          {/* Page-level branching: where does this page hand off to? */}
+          {selectedItem?.type === "page" && <PageFlowPanel pageId={selectedItem.pageId} />}
 
           {selectedItem?.type === "question" && (
             <QuestionPanel
@@ -667,6 +685,14 @@ export function FormPropertiesPanel() {
           )}
         </div>
       </ScrollArea>
+
+      {/* Delete — pinned, so it stays reachable however long the body gets */}
+      {selectedItem?.type === "question" && (
+        <DeleteQuestionFooter
+          pageId={selectedItem.pageId}
+          questionId={selectedItem.questionId}
+        />
+      )}
     </div>
   );
 }

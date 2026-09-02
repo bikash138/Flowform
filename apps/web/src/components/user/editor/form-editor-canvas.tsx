@@ -10,9 +10,20 @@ import {
   PlayCircle,
   Flag,
   ImageIcon,
+  GitBranch,
 } from "lucide-react";
+// LogicRule comes from form-core, not the database package: form-core widens the
+// condition union (is_empty, not_contains, …) ahead of the DB type, so its rule
+// type is the superset and the one every consumer should read.
+import { visibilityRuleOf, type LogicRule } from "@flowform/form-core";
 import { cn } from "@/lib/utils";
 import type { FormSettings, FormPage, FormFont } from "@flowform/database/models";
+
+/** "Shown when X" and "Hidden when X" are opposite meanings — never collapse them. */
+function ruleBadge(rule: LogicRule, triggerLabel: string): string {
+  const verb = rule.action === "HIDE" ? "Hidden" : "Shown";
+  return `${verb} when “${triggerLabel || "Untitled question"}” matches`;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -355,13 +366,25 @@ function ConversationalCanvas({
   onSelectQuestion,
   selectedQuestionId,
   isMobile,
+  visibilityRules,
+  allQs,
 }: {
   page: FormPage | undefined;
   onSelectQuestion: (questionId: string) => void;
   selectedQuestionId?: string;
   isMobile: boolean;
+  /** questionId -> the SHOW or HIDE rule controlling it. Derived from the rule list. */
+  visibilityRules: Map<string, LogicRule>;
+  allQs: Question[];
 }) {
-  const question = page?.questions[0];
+  // A conversational page leads with one question, but may also carry the
+  // follow-ups that question reveals — they live on the same card by design.
+  // The canvas shows ALL of them (unlike the live form, which hides the
+  // follow-ups until their condition fires) because an author has to be able to
+  // see and select a conditional question in order to edit it.
+  const questions = [...(page?.questions ?? [])].sort((a, b) => a.order - b.order);
+  const [lead, ...followUps] = questions;
+
   const coverImage = page?.coverImage;
   const imagePosition = page?.imagePosition ?? "left";
 
@@ -384,7 +407,13 @@ function ConversationalCanvas({
   }
 
   function QuestionSlot({ withOverlayNav }: { withOverlayNav?: boolean }) {
-    const showNextBtn = question && question.type !== "radio" && question.type !== "rating";
+    // The card only auto-advances while the lead question stands alone. Once it
+    // reveals a follow-up, the respondent has to answer that too — so a Next
+    // button appears instead. Mirrors the live renderer.
+    const autoAdvances =
+      !!lead && followUps.length === 0 && (lead.type === "radio" || lead.type === "rating" || lead.type === "yes_no");
+    const showNextBtn = !!lead && !autoAdvances;
+
     return (
       <div className={cn(
         "flex flex-col",
@@ -394,21 +423,61 @@ function ConversationalCanvas({
         <div className={cn(
           withOverlayNav ? "absolute inset-0 overflow-y-auto px-5 pt-4 pb-20 flex flex-col" : "flex-1 flex flex-col justify-center"
         )}>
-          {question ? (
-            <div
-              className={cn("flex flex-col justify-center p-3 rounded-lg border-2 transition-all cursor-pointer", withOverlayNav && "flex-1")}
-              style={{
-                borderColor: selectedQuestionId === question.id ? "var(--primary)" : "transparent",
-                backgroundColor: selectedQuestionId === question.id ? "var(--form-choice-selected)" : "transparent",
-              }}
-              onClick={() => onSelectQuestion(question.id)}
-            >
-              <p className="text-xs font-semibold mb-1" style={{ color: "var(--primary)" }}>1 →</p>
-              <Label className="text-base font-semibold mb-3 block" style={{ color: "var(--form-label)", fontFamily: "inherit" }}>
-                {question.label || "Untitled question"}
-                {question.required && <span style={{ color: "var(--primary)" }} className="ml-0.5">*</span>}
-              </Label>
-              <QuestionField question={question} />
+          {lead ? (
+            <div className={cn("flex flex-col", withOverlayNav && "flex-1 justify-center")}>
+              {/* Lead question */}
+              <div
+                className="flex flex-col p-3 rounded-lg border-2 transition-all cursor-pointer"
+                style={{
+                  borderColor: selectedQuestionId === lead.id ? "var(--primary)" : "transparent",
+                  backgroundColor: selectedQuestionId === lead.id ? "var(--form-choice-selected)" : "transparent",
+                }}
+                onClick={() => onSelectQuestion(lead.id)}
+              >
+                <p className="text-xs font-semibold mb-1" style={{ color: "var(--primary)" }}>1 →</p>
+                <Label className="text-base font-semibold mb-3 block" style={{ color: "var(--form-label)", fontFamily: "inherit" }}>
+                  {lead.label || "Untitled question"}
+                  {lead.required && <span style={{ color: "var(--primary)" }} className="ml-0.5">*</span>}
+                </Label>
+                <QuestionField question={lead} />
+              </div>
+
+              {/* Follow-ups. Shown here even though the live form hides them
+                  until their condition fires — otherwise they would be
+                  unselectable and therefore uneditable. */}
+              {followUps.map((q) => {
+                const vRule = visibilityRules.get(q.id);
+                const triggerLabel = vRule
+                  ? allQs.find((x) => x.id === vRule.triggerId)?.label ?? ""
+                  : "";
+
+                return (
+                  <div
+                    key={q.id}
+                    className="mt-3 ml-4 p-3 rounded-lg border-2 transition-all cursor-pointer"
+                    style={{
+                      borderColor: selectedQuestionId === q.id ? "var(--primary)" : "transparent",
+                      backgroundColor: selectedQuestionId === q.id ? "var(--form-choice-selected)" : "transparent",
+                      borderLeftColor: "var(--primary)",
+                      borderLeftWidth: "2px",
+                    }}
+                    onClick={() => onSelectQuestion(q.id)}
+                  >
+                    <p className="flex items-center gap-1 text-[10px] font-semibold mb-1.5 opacity-70"
+                      style={{ color: "var(--primary)" }}>
+                      <GitBranch className="size-3" />
+                      {vRule
+                        ? ruleBadge(vRule, triggerLabel)
+                        : "Always shown — add a condition in Properties"}
+                    </p>
+                    <Label className="text-sm font-semibold mb-2 block" style={{ color: "var(--form-label)", fontFamily: "inherit" }}>
+                      {q.label || "Untitled question"}
+                      {q.required && <span style={{ color: "var(--primary)" }} className="ml-0.5">*</span>}
+                    </Label>
+                    <QuestionField question={q} />
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-2 text-center py-8">
@@ -438,7 +507,7 @@ function ConversationalCanvas({
                   Next →
                 </button>
               )}
-              {question && !showNextBtn && (
+              {autoAdvances && (
                 <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>Auto-advances</p>
               )}
             </div>
@@ -456,7 +525,7 @@ function ConversationalCanvas({
                 Next →
               </button>
             )}
-            {question && !showNextBtn && (
+            {autoAdvances && (
               <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>Auto-advances on selection</p>
             )}
           </div>
@@ -511,6 +580,11 @@ export function FormEditorCanvas() {
   const activePageQuestions = activePage?.questions ?? [];
   const hasActivePage = content?.pages.some((p) => p.id === activePageId) ?? false;
 
+  // questionId -> the SHOW or HIDE rule controlling it. Derived from the flat
+  // rule list on every render; nothing about nesting is stored on the question.
+  const visibilityRules = content ? visibilityRuleOf(content) : new Map<string, LogicRule>();
+  const allQs = content?.pages.flatMap((p) => p.questions) ?? [];
+
   const showProgressBar = form?.settings?.progressBar?.enabled ?? false;
   const showStartPage = selectedItem?.type === "startPage";
   const showEndPage   = selectedItem?.type === "endPage";
@@ -555,6 +629,8 @@ export function FormEditorCanvas() {
               }}
               selectedQuestionId={selectedQuestionId}
               isMobile={isMobile}
+              visibilityRules={visibilityRules}
+              allQs={allQs}
             />
           )}
         </div>
@@ -607,18 +683,43 @@ export function FormEditorCanvas() {
                     const isSelected =
                       selectedItem?.type === "question" &&
                       selectedItem.questionId === question.id;
+
+                    // A conditional question is flagged with the rule that controls
+                    // it. Computed from the flat rule list — nothing is nested in
+                    // the data, so there is no second copy to keep in sync.
+                    //
+                    // Only SHOW targets get the indent: they are genuine follow-ups,
+                    // hidden until revealed. A HIDE target is visible by default and
+                    // merely suppressed for one group, so it stays inline.
+                    const vRule = visibilityRules.get(question.id);
+                    const triggerLabel = vRule
+                      ? allQs.find((q) => q.id === vRule.triggerId)?.label ?? ""
+                      : "";
+                    const isRevealed = vRule?.action === "SHOW";
+
                     return (
                       <div key={question.id}
                         onClick={(e) => {
                           e.stopPropagation();
                           selectItem({ type: "question", pageId: activePageId!, questionId: question.id });
                         }}
-                        className="p-4 rounded-lg border-2 transition-all cursor-pointer"
+                        className={cn(
+                          "p-4 rounded-lg border-2 transition-all cursor-pointer",
+                          isRevealed && "ml-6",
+                        )}
                         style={{
                           borderColor: isSelected ? "var(--primary)" : "transparent",
                           backgroundColor: isSelected ? "var(--form-choice-selected)" : "transparent",
+                          ...(isRevealed ? { borderLeftColor: "var(--primary)", borderLeftWidth: "2px" } : {}),
                         }}
                       >
+                        {vRule && (
+                          <p className="flex items-center gap-1 text-[10px] font-semibold mb-1.5 opacity-70"
+                            style={{ color: "var(--primary)" }}>
+                            <GitBranch className="size-3" />
+                            {ruleBadge(vRule, triggerLabel)}
+                          </p>
+                        )}
                         <Label className="text-sm font-semibold mb-2.5 block"
                           style={{ color: "var(--form-label)", fontFamily: "inherit" }}>
                           {question.label || "Untitled question"}

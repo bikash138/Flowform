@@ -9,6 +9,7 @@ import {
 import type {
   FormContent, FormTheme, FormFont, Question, EndPageAnimation,
 } from "@flowform/database/models";
+import { resolve, nextPageAfter, conditionallyRevealed, type Resolved } from "@flowform/form-core";
 import { usePreviewForm } from "@/hooks/user/use-public-form";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -17,6 +18,18 @@ type AnswerValue = string | number | string[] | boolean | null;
 type Answers = Record<string, AnswerValue>;
 type Errors = Record<string, string>;
 type ViewState = "start" | "questions" | "end";
+
+/** Choice questions advance the conversational card on their own — unless they reveal a follow-up. */
+const AUTO_ADVANCE_TYPES = new Set<Question["type"]>(["radio", "rating", "yes_no"]);
+
+/** Used before `content` has loaded, so the walk can be computed unconditionally. */
+const EMPTY_RESOLVED: Resolved = {
+  path: [],
+  visibleQuestionIds: new Set(),
+  requiredQuestionIds: new Set(),
+  effectiveAnswers: {},
+  truncated: false,
+};
 
 type PreviewSettings = {
   accessType: "public" | "unlisted" | "password_protected";
@@ -707,12 +720,13 @@ function WatermarkFooter({ pageFg, pageBg }: { pageFg: string; pageBg: string })
 // ─── Vertical layout nav ──────────────────────────────────────────────────────
 
 function VerticalNavActions({
-  settings, pages, pageIndex, view, isLastPage, pageFg,
+  settings, pathIndex, pathLength, view, isLastPage, pageFg,
   onPrev, onNext, onRestart, prevDisabled,
 }: {
   settings: PreviewSettings;
-  pages: FormContent["pages"];
-  pageIndex: number;
+  /** Position along the RESOLVED path — a 20-page form may be 6 pages long for this walk. */
+  pathIndex: number;
+  pathLength: number;
   view: ViewState;
   isLastPage: boolean;
   pageFg: string;
@@ -741,11 +755,11 @@ function VerticalNavActions({
 
   return (
     <div className="mt-3 space-y-2">
-      {settings.progressBar.enabled && pages.length > 0 && (
+      {settings.progressBar.enabled && pathLength > 0 && (
         <ProgressIndicator
           settings={settings}
-          pageIndex={pageIndex}
-          totalPages={pages.length}
+          pageIndex={pathIndex}
+          totalPages={pathLength}
           pageFg={pageFg}
         />
       )}
@@ -777,14 +791,16 @@ function VerticalNavActions({
 // ─── Conversational question page ─────────────────────────────────────────────
 
 function ConvQuestionPage({
-  currentPage, pageIndex, pagesLength, conversationalQuestion,
+  currentPage, pageIndex, pagesLength, visibleQuestions, requiredIds,
   answers, errors, prevDisabled, showNextButton, isLastPage,
   theme, settings, pageFg, onPrev, onNext, onAnswer,
 }: {
   currentPage: FormContent["pages"][number] | undefined;
   pageIndex: number;
   pagesLength: number;
-  conversationalQuestion: Question | undefined;
+  /** The page's lead question plus any follow-ups its answer has revealed. */
+  visibleQuestions: Question[];
+  requiredIds: Set<string>;
   answers: Answers;
   errors: Errors;
   prevDisabled: boolean;
@@ -821,6 +837,8 @@ function ConvQuestionPage({
   }
 
   function QuestionContent() {
+    const [lead, ...followUps] = visibleQuestions;
+
     return (
       <>
         {settings.progressBar.enabled && (
@@ -836,38 +854,64 @@ function ConvQuestionPage({
         <p className="text-xs font-bold mb-3" style={{ color: "var(--primary)", opacity: 0.7 }}>
           {pageIndex + 1} / {pagesLength}
         </p>
-        {conversationalQuestion ? (
-          <div id={`q-${conversationalQuestion.id}`}>
-            <label className="text-xl font-bold mb-1 block leading-snug" style={{ color: "var(--form-label)" }}>
-              {conversationalQuestion.label || "Untitled question"}
-              {conversationalQuestion.required && (
-                <span style={{ color: "var(--primary)" }} className="ml-0.5">*</span>
+        {lead ? (
+          <>
+            {/* The page's lead question, rendered large. */}
+            <div id={`q-${lead.id}`}>
+              <label className="text-xl font-bold mb-1 block leading-snug" style={{ color: "var(--form-label)" }}>
+                {lead.label || "Untitled question"}
+                {requiredIds.has(lead.id) && (
+                  <span style={{ color: "var(--primary)" }} className="ml-0.5">*</span>
+                )}
+              </label>
+              {lead.placeholder && lead.type !== "short_text" && lead.type !== "long_text" && (
+                <p className="text-sm mb-3 mt-1" style={{ color: "var(--muted-foreground)" }}>
+                  {lead.placeholder}
+                </p>
               )}
-            </label>
-            {conversationalQuestion.placeholder && conversationalQuestion.type !== "short_text" && conversationalQuestion.type !== "long_text" && (
-              <p className="text-sm mb-3 mt-1" style={{ color: "var(--muted-foreground)" }}>
-                {conversationalQuestion.placeholder}
-              </p>
-            )}
-            <div className="mt-3">
-              <InteractiveField
-                question={conversationalQuestion}
-                value={answers[conversationalQuestion.id] ?? null}
-                onChange={(v) => onAnswer(conversationalQuestion.id, v, conversationalQuestion.type)}
-                hasError={!!errors[conversationalQuestion.id]}
-              />
+              <div className="mt-3">
+                <InteractiveField
+                  question={lead}
+                  value={answers[lead.id] ?? null}
+                  onChange={(v) => onAnswer(lead.id, v, lead.type)}
+                  hasError={!!errors[lead.id]}
+                />
+              </div>
+              {errors[lead.id] && (
+                <p className="mt-2 text-xs" style={{ color: "#ef4444" }}>
+                  {errors[lead.id]}
+                </p>
+              )}
             </div>
-            {errors[conversationalQuestion.id] && (
-              <p className="mt-2 text-xs" style={{ color: "#ef4444" }}>
-                {errors[conversationalQuestion.id]}
-              </p>
-            )}
-            {(conversationalQuestion.type === "radio" || conversationalQuestion.type === "rating" || conversationalQuestion.type === "yes_no") && (
+
+            {/* Follow-ups revealed by the lead question's answer — same card. */}
+            {followUps.map((q) => (
+              <div key={q.id} id={`q-${q.id}`} className="mt-5 pl-3 ff-reveal" style={{ borderLeft: "2px solid var(--primary)" }}>
+                <label className="text-sm font-semibold mb-2 block" style={{ color: "var(--form-label)" }}>
+                  {q.label || "Untitled question"}
+                  {requiredIds.has(q.id) && (
+                    <span style={{ color: "var(--primary)" }} className="ml-0.5">*</span>
+                  )}
+                </label>
+                <InteractiveField
+                  question={q}
+                  value={answers[q.id] ?? null}
+                  onChange={(v) => onAnswer(q.id, v, q.type)}
+                  hasError={!!errors[q.id]}
+                />
+                {errors[q.id] && (
+                  <p className="mt-1.5 text-xs" style={{ color: "#ef4444" }}>{errors[q.id]}</p>
+                )}
+              </div>
+            ))}
+
+            {/* Auto-advance only while the lead question stands alone. */}
+            {followUps.length === 0 && AUTO_ADVANCE_TYPES.has(lead.type) && (
               <p className="mt-3 text-xs opacity-50" style={{ color: "var(--muted-foreground)" }}>
                 Advances automatically on selection
               </p>
             )}
-          </div>
+          </>
         ) : (
           <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>No question on this page.</p>
         )}
@@ -953,7 +997,10 @@ export default function FormPreviewPage() {
   const { data, isLoading, isError } = usePreviewForm(formId ?? "");
 
   const [view, setView] = useState<ViewState>("start");
-  const [pageIndex, setPageIndex] = useState(0);
+  // A page ID, not an index — with JUMP, "next" is no longer "index + 1".
+  const [pageId, setPageId] = useState<string | null>(null);
+  // Breadcrumbs. A JUMP is a one-way door, so Back must be remembered, not derived.
+  const [history, setHistory] = useState<string[]>([]);
   const [answers, setAnswers] = useState<Answers>({});
   const [errors, setErrors] = useState<Errors>({});
   const [emailValue, setEmailValue] = useState("");
@@ -962,11 +1009,17 @@ export default function FormPreviewPage() {
   const [animationKey, setAnimationKey] = useState(0);
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Determine initial view when data loads
+  // Determine the initial view AND the first page when data loads.
+  // The first page is the first page on the resolved path — not necessarily
+  // pages[0], since a form can route away from its first page.
   useEffect(() => {
     if (!data?.content) return;
-    const content = data.content as FormContent;
-    if (!content.startPage?.heading?.trim()) {
+    const c = data.content as FormContent;
+
+    setPageId((current) => current ?? resolve(c, {}).path[0] ?? null);
+    setHistory([]);
+
+    if (!c.startPage?.heading?.trim()) {
       setView("questions");
     }
   }, [data]);
@@ -1012,11 +1065,31 @@ export default function FormPreviewPage() {
   const fontFamily = font.fontFamily;
   const googleFontSlug = fontFamily.replace(/\s+/g, "+");
 
-  const currentPage = pages[pageIndex];
-  const isFirstPage = pageIndex === 0;
-  const isLastPage = pageIndex === pages.length - 1;
-  const prevDisabled = isFirstPage && !content?.startPage?.heading?.trim();
   const hasStartPage = !!(content?.startPage?.heading?.trim());
+
+  // ── THE WALK ────────────────────────────────────────────────────────────────
+  // The SAME function the real form and the server run. Preview must branch
+  // exactly like production, or an author cannot test their logic — and this
+  // page is a near-copy of the public renderer, so it is precisely the place a
+  // second, divergent implementation would creep back in.
+  const resolved: Resolved = content ? resolve(content, answers) : EMPTY_RESOLVED;
+
+  // Genuine follow-ups only — hidden by default, revealed by an answer above.
+  // HIDE-controlled questions are visible by default, so they render normally.
+  const isFollowUp = content ? conditionallyRevealed(content) : new Set<string>();
+
+  const currentPage = pages.find((p) => p.id === pageId);
+
+  const visibleQuestions = (currentPage?.questions ?? [])
+    .filter((q) => resolved.visibleQuestionIds.has(q.id))
+    .sort((a, b) => a.order - b.order);
+
+  // Position along the path THEY are walking, not the raw page list.
+  const pathIndex  = pageId ? resolved.path.indexOf(pageId) : -1;
+  const pathLength = resolved.path.length;
+  const isLastPage = pathIndex !== -1 && pathIndex === pathLength - 1;
+
+  const prevDisabled = history.length === 0 && !hasStartPage;
 
   const rootStyle: React.CSSProperties = {
     fontFamily,
@@ -1027,15 +1100,12 @@ export default function FormPreviewPage() {
       : {}),
   };
 
-  // Conversational: first question per page
-  const AUTO_ADVANCE_TYPES = new Set<Question["type"]>(["radio", "rating", "yes_no"]);
-  const conversationalQuestion = currentPage?.questions[0];
-  const convType = conversationalQuestion?.type;
+  const leadQuestion = visibleQuestions[0];
   const showConvNextButton =
     isConversational &&
     view === "questions" &&
-    !!conversationalQuestion &&
-    !AUTO_ADVANCE_TYPES.has(convType!);
+    !!leadQuestion &&
+    !(visibleQuestions.length === 1 && AUTO_ADVANCE_TYPES.has(leadQuestion.type));
 
   // ── Validation ──────────────────────────────────────────────────────────────
 
@@ -1043,7 +1113,9 @@ export default function FormPreviewPage() {
     if (!currentPage) return true;
     const newErrors: Errors = {};
 
-    for (const q of currentPage.questions) {
+    // Only the questions they can SEE, and `required` comes from the walk, so a
+    // REQUIRE rule that fired is enforced and a hidden question is never demanded.
+    for (const q of visibleQuestions) {
       const ans = answers[q.id];
       const isEmpty =
         ans === null ||
@@ -1051,7 +1123,7 @@ export default function FormPreviewPage() {
         (typeof ans === "string" && ans.trim() === "") ||
         (Array.isArray(ans) && ans.length === 0);
 
-      if (q.required && isEmpty) {
+      if (resolved.requiredQuestionIds.has(q.id) && isEmpty) {
         newErrors[q.id] = "This field is required";
         continue;
       }
@@ -1095,9 +1167,11 @@ export default function FormPreviewPage() {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) { setEmailError("Please enter a valid email."); return; }
       setEmailError("");
     }
-    setView(pages.length === 0 ? "end" : "questions");
-    setPageIndex(0);
-    if (pages.length === 0) setAnimationKey((k) => k + 1);
+    // Start at the first page ON THE PATH, not necessarily pages[0].
+    setPageId(resolved.path[0] ?? null);
+    setHistory([]);
+    setView(resolved.path.length === 0 ? "end" : "questions");
+    if (resolved.path.length === 0) setAnimationKey((k) => k + 1);
   }
 
   function handleRestart() {
@@ -1105,30 +1179,40 @@ export default function FormPreviewPage() {
     setErrors({});
     setEmailValue("");
     setEmailError("");
-    setPageIndex(0);
+    // With no answers, the walk collapses to the default path.
+    setPageId(content ? (resolve(content, {}).path[0] ?? null) : null);
+    setHistory([]);
     setView(hasStartPage ? "start" : "questions");
   }
 
-  function advanceForward() {
-    if (isLastPage) {
+  /** Walk forward from `pageId` using `next` answers, or finish if the path ends. */
+  function advance(next: Answers) {
+    const target = content && pageId ? nextPageAfter(content, next, pageId) : null;
+    if (!target) {
       setView("end");
       setAnimationKey((k) => k + 1);
-    } else {
-      setPageIndex((p) => p + 1);
-      setErrors({});
+      return;
     }
+    setHistory((h) => [...h, pageId!]);
+    setPageId(target);
+    setErrors({});
   }
 
   function handleNext() {
     if (!validateCurrentPage()) return;
-    advanceForward();
+    advance(answers);
   }
 
   function handlePrev() {
-    if (!isFirstPage) {
-      setPageIndex((p) => p - 1);
+    // Pop a breadcrumb — a JUMP cannot be inverted.
+    const prev = history[history.length - 1];
+    if (prev) {
+      setHistory((h) => h.slice(0, -1));
+      setPageId(prev);
       setErrors({});
-    } else if (hasStartPage) {
+      return;
+    }
+    if (hasStartPage) {
       setView("start");
       setErrors({});
     }
@@ -1143,12 +1227,21 @@ export default function FormPreviewPage() {
 
   function setAnswerWithAutoAdvance(questionId: string, val: AnswerValue, type: Question["type"]) {
     setAnswer(questionId, val);
-    if (isConversational && AUTO_ADVANCE_TYPES.has(type) && val !== null) {
-      if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
-      autoAdvanceTimer.current = setTimeout(() => {
-        advanceForward();
-      }, 450);
-    }
+
+    if (!isConversational || !AUTO_ADVANCE_TYPES.has(type) || val === null || !content) return;
+
+    // Did answering this REVEAL a follow-up on the same card? If so, stay put —
+    // skipping the card would skip the very question it just revealed.
+    const next: Answers = { ...answers, [questionId]: val };
+    const after = resolve(content, next);
+    const stillOnPage = (currentPage?.questions ?? [])
+      .filter((q) => after.visibleQuestionIds.has(q.id))
+      .sort((a, b) => a.order - b.order);
+
+    if (stillOnPage[stillOnPage.length - 1]?.id !== questionId) return;
+
+    if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+    autoAdvanceTimer.current = setTimeout(() => advance(next), 450);
   }
 
   // ── Password gate ───────────────────────────────────────────────────────────
@@ -1199,6 +1292,8 @@ export default function FormPreviewPage() {
           @import url('https://fonts.googleapis.com/css2?family=${googleFontSlug}:wght@400;500;600;700&display=swap');
           @keyframes ff-card-enter { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
           .ff-card-enter { animation: ff-card-enter 0.3s cubic-bezier(0.4,0,0.2,1) forwards; }
+          @keyframes ff-reveal { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+          .ff-reveal { animation: ff-reveal 0.25s cubic-bezier(0.4,0,0.2,1) forwards; }
         `}</style>
 
         <div className="fixed top-0 left-0 right-0 z-50 bg-amber-400 text-amber-950 text-xs font-semibold text-center py-1.5 select-none">
@@ -1218,7 +1313,7 @@ export default function FormPreviewPage() {
             <div
               className="flex-1 w-full md:flex-none md:max-w-4xl md:rounded-2xl md:h-[560px] overflow-hidden shadow-xl flex flex-col"
               style={{ ...themeVars, backgroundColor: theme.backgroundColor }}
-              key={`${view}-${pageIndex}`}
+              key={`${view}-${pageId}`}
             >
               {/* Start page */}
               {view === "start" && hasStartPage && (
@@ -1304,11 +1399,12 @@ export default function FormPreviewPage() {
               {/* Questions */}
               {view === "questions" && (
                 <ConvQuestionPage
-                  key={`q-${pageIndex}`}
+                  key={`q-${pageId}`}
                   currentPage={currentPage}
-                  pageIndex={pageIndex}
-                  pagesLength={pages.length}
-                  conversationalQuestion={conversationalQuestion}
+                  pageIndex={pathIndex}
+                  pagesLength={pathLength}
+                  visibleQuestions={visibleQuestions}
+                  requiredIds={resolved.requiredQuestionIds}
                   answers={answers}
                   errors={errors}
                   prevDisabled={prevDisabled}
@@ -1351,6 +1447,8 @@ export default function FormPreviewPage() {
         @import url('https://fonts.googleapis.com/css2?family=${googleFontSlug}:wght@400;500;600;700&display=swap');
         @keyframes ff-enter { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
         .ff-enter { animation: ff-enter 0.28s cubic-bezier(0.4,0,0.2,1) forwards; }
+        @keyframes ff-reveal { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+        .ff-reveal { animation: ff-reveal 0.25s cubic-bezier(0.4,0,0.2,1) forwards; }
       `}</style>
 
       <div className="fixed top-0 left-0 right-0 z-50 bg-amber-400 text-amber-950 text-xs font-semibold text-center py-1.5 select-none">
@@ -1370,7 +1468,7 @@ export default function FormPreviewPage() {
               className="w-full rounded-xl border shadow-md overflow-hidden"
               style={{ backgroundColor: theme.backgroundColor, borderColor: "var(--form-input-border)" }}
             >
-              <div key={`${view}-${pageIndex}`} className="ff-enter">
+              <div key={`${view}-${pageId}`} className="ff-enter">
 
                 {/* Start page */}
                 {view === "start" && hasStartPage && (
@@ -1413,36 +1511,45 @@ export default function FormPreviewPage() {
                   </div>
                 )}
 
-                {/* Questions */}
+                {/* Questions — only what the walk says is visible. Revealed
+                    follow-ups get an accent rail so they read as children. */}
                 {view === "questions" && (
                   <div className="p-6 md:p-8">
-                    {!currentPage || currentPage.questions.length === 0 ? (
+                    {visibleQuestions.length === 0 ? (
                       <div className="flex items-center justify-center py-16">
                         <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>No questions on this page.</p>
                       </div>
                     ) : (
                       <div className="flex flex-col gap-7">
-                        {currentPage.questions.map((question) => (
-                          <div key={question.id} id={`q-${question.id}`}>
-                            <label className="text-sm font-semibold mb-2.5 block" style={{ color: "var(--form-label)" }}>
-                              {question.label || "Untitled question"}
-                              {question.required && (
-                                <span style={{ color: "var(--primary)" }} className="ml-0.5">*</span>
+                        {visibleQuestions.map((question) => {
+                          const isRevealed = isFollowUp.has(question.id);
+                          return (
+                            <div
+                              key={question.id}
+                              id={`q-${question.id}`}
+                              className={isRevealed ? "pl-3 ff-reveal" : undefined}
+                              style={isRevealed ? { borderLeft: "2px solid var(--primary)" } : undefined}
+                            >
+                              <label className="text-sm font-semibold mb-2.5 block" style={{ color: "var(--form-label)" }}>
+                                {question.label || "Untitled question"}
+                                {resolved.requiredQuestionIds.has(question.id) && (
+                                  <span style={{ color: "var(--primary)" }} className="ml-0.5">*</span>
+                                )}
+                              </label>
+                              <InteractiveField
+                                question={question}
+                                value={answers[question.id] ?? null}
+                                onChange={(v) => setAnswer(question.id, v)}
+                                hasError={!!errors[question.id]}
+                              />
+                              {errors[question.id] && (
+                                <p className="mt-1.5 text-xs" style={{ color: "#ef4444" }}>
+                                  {errors[question.id]}
+                                </p>
                               )}
-                            </label>
-                            <InteractiveField
-                              question={question}
-                              value={answers[question.id] ?? null}
-                              onChange={(v) => setAnswer(question.id, v)}
-                              hasError={!!errors[question.id]}
-                            />
-                            {errors[question.id] && (
-                              <p className="mt-1.5 text-xs" style={{ color: "#ef4444" }}>
-                                {errors[question.id]}
-                              </p>
-                            )}
-                          </div>
-                        ))}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -1485,8 +1592,8 @@ export default function FormPreviewPage() {
             {/* Nav below card */}
             <VerticalNavActions
               settings={settings}
-              pages={pages}
-              pageIndex={pageIndex}
+              pathIndex={pathIndex}
+              pathLength={pathLength}
               view={view}
               isLastPage={isLastPage}
               pageFg={pageFg}

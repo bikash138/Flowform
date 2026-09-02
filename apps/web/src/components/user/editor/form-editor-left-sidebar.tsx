@@ -23,6 +23,7 @@ import {
   PlayCircle,
   Flag,
   GripVertical,
+  Route,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFormEditorStore } from "@/store/use-form-editor-store";
@@ -148,6 +149,8 @@ function SortablePage({
   page,
   index,
   isActivePage,
+  isSelected,
+  hasFlow,
   isOpen,
   onToggle,
   onActivate,
@@ -160,6 +163,10 @@ function SortablePage({
   page: { id: string };
   index: number;
   isActivePage: boolean;
+  /** The page itself is selected — its flow panel is open on the right. */
+  isSelected: boolean;
+  /** This page branches: it has a jump, or an explicit "always go to X". */
+  hasFlow: boolean;
   isOpen: boolean;
   onToggle: () => void;
   onActivate: () => void;
@@ -190,9 +197,11 @@ function SortablePage({
         <div
           className={cn(
             "flex items-center group rounded-md transition-colors",
-            isActivePage
-              ? "bg-muted text-foreground"
-              : "text-muted-foreground hover:bg-muted/50",
+            isSelected
+              ? "bg-primary/10 text-primary"
+              : isActivePage
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:bg-muted/50",
           )}
         >
           {/* Drag handle */}
@@ -226,6 +235,17 @@ function SortablePage({
               <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
                 1Q
               </span>
+            )}
+            {/* This page sends people somewhere other than straight down the outline. */}
+            {hasFlow && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="shrink-0">
+                    <Route className="size-3 text-primary" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="right">This page branches</TooltipContent>
+              </Tooltip>
             )}
           </button>
 
@@ -295,6 +315,14 @@ export function FormPagesSidebar() {
   const formLayout =
     (form?.settings as FormSettings | undefined)?.formLayout ?? "vertical";
   const isConversational = formLayout === "conversational";
+
+  // Pages that a JUMP can fire from — i.e. pages holding a jump's trigger question.
+  const jumpPageIds = new Set(
+    (content?.logic ?? [])
+      .filter((r) => r.action === "JUMP")
+      .map((r) => pages.find((p) => p.questions.some((q) => q.id === r.triggerId))?.id)
+      .filter((id): id is string => !!id),
+  );
 
   const [openPages, setOpenPages] = useState<Record<string, boolean>>({});
   const [addContentPageId, setAddContentPageId] = useState<string | null>(null);
@@ -381,9 +409,21 @@ export function FormPagesSidebar() {
                       page={{ id: page.id }}
                       index={index}
                       isActivePage={activePageId === page.id}
+                      isSelected={
+                        selectedItem?.type === "page" && selectedItem.pageId === page.id
+                      }
+                      hasFlow={
+                        !!page.defaultNext ||
+                        jumpPageIds.has(page.id)
+                      }
                       isOpen={isPageOpen(page.id)}
                       onToggle={() => togglePage(page.id)}
-                      onActivate={() => setActivePage(page.id)}
+                      onActivate={() => {
+                        setActivePage(page.id);
+                        // Selecting the page opens its flow panel on the right —
+                        // that is where JUMPs and "always go to X" are authored.
+                        selectItem({ type: "page", pageId: page.id });
+                      }}
                       onAddQuestion={() => {
                         setActivePage(page.id);
                         setAddContentPageId(page.id);

@@ -30,6 +30,7 @@ export type PublishChangeType = "none" | "soft" | "hard";
 export type SelectedItem =
   | { type: "startPage" }
   | { type: "endPage" }
+  | { type: "page"; pageId: string }
   | { type: "question"; pageId: string; questionId: string }
   | null;
 
@@ -99,6 +100,8 @@ interface FormEditorState {
   updatePageLayout: (pageId: string, layout: PageLayout) => void;
   updatePageCoverImage: (pageId: string, imageUrl: string | null) => void;
   updatePageImagePosition: (pageId: string, position: "left" | "right") => void;
+  /** null = fall through to the next page in document order. */
+  setPageNext: (pageId: string, next: string | "END" | null) => void;
 
   // Start / end page — soft changes
   updateStartPage: (patch: Partial<StartPage>) => void;
@@ -144,6 +147,38 @@ function markChange(state: FormEditorState, changeType: "soft" | "hard") {
     state.publishChangeType = "hard";
   } else if (state.publishChangeType === "none") {
     state.publishChangeType = "soft";
+  }
+}
+
+/**
+ * Drop every logic rule that references a question that no longer exists.
+ *
+ * Rules live in a flat list beside the questions, so deleting a question does
+ * not delete the rules pointing at it — they become dangling references that
+ * silently never fire. Every structural mutation must run this.
+ */
+function pruneOrphanedRules(state: FormEditorState) {
+  if (!state.content) return;
+
+  const questionIds = new Set(
+    state.content.pages.flatMap((p) => p.questions.map((q) => q.id)),
+  );
+  const pageIds = new Set(state.content.pages.map((p) => p.id));
+
+  state.content.logic = state.content.logic.filter((rule) => {
+    if (!questionIds.has(rule.triggerId)) return false;
+    // JUMP targets a page; everything else targets a question.
+    return rule.action === "JUMP"
+      ? rule.targetId === "END" || pageIds.has(rule.targetId)
+      : questionIds.has(rule.targetId);
+  });
+
+  // A page's "always go to X" pointer can dangle too. Clearing it falls back to
+  // document order, which is always a valid page (or the end of the form).
+  for (const page of state.content.pages) {
+    if (page.defaultNext && page.defaultNext !== "END" && !pageIds.has(page.defaultNext)) {
+      delete page.defaultNext;
+    }
   }
 }
 
@@ -288,15 +323,17 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
       produce<FormEditorState>((state) => {
         const page = state.content?.pages.find((p) => p.id === pageId);
         if (!page) return;
-        const isConversational = (state.form?.settings as FormSettings | undefined)?.formLayout === "conversational";
-        const question = buildDefaultQuestion(type, 0);
-        if (isConversational) {
-          // Replace existing question instead of adding
-          page.questions = [question];
-        } else {
-          question.order = page.questions.length;
-          page.questions.push(question);
-        }
+
+        // A conversational page used to REPLACE its single question, which made
+        // conditional logic impossible there: a follow-up has to live on the
+        // same page as the question that reveals it, and the page could only
+        // ever hold one. So we append here too.
+        //
+        // The card still leads with the page's first question; anything after
+        // it renders underneath as a revealed follow-up.
+        const question = buildDefaultQuestion(type, page.questions.length);
+        page.questions.push(question);
+
         state.selectedItem = { type: "question", pageId, questionId: question.id };
         markChange(state, "hard");
       }),
@@ -326,6 +363,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
         ) {
           state.selectedItem = null;
         }
+        pruneOrphanedRules(state);
         markChange(state, "hard");
       }),
     ),
@@ -380,6 +418,14 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
         if (!question?.options) return;
         question.options = question.options.filter((o) => o.id !== optionId);
         question.options.forEach((o, i) => { o.order = i; });
+
+        // A rule checking for a deleted option would never match again — and it
+        // would fail silently, which is the worst way for a form to break.
+        if (state.content) {
+          state.content.logic = state.content.logic.filter(
+            (r) => !(r.triggerId === questionId && r.value === optionId),
+          );
+        }
         markChange(state, "hard");
       }),
     ),
@@ -430,6 +476,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
             remaining[Math.max(0, idx - 1)]?.id ?? remaining[0]?.id ?? null;
           state.selectedItem = null;
         }
+        pruneOrphanedRules(state);
         Object.assign(state, computePageNavState(state.content.pages, state.activePageId));
         markChange(state, "hard");
       }),
@@ -477,6 +524,20 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
       }),
     ),
 
+  // Where this page hands off to when no conditional JUMP fires. This is what
+  // lets a branch REJOIN the shared tail — it changes which questions a
+  // respondent is asked, so it is a HARD change.
+  setPageNext: (pageId, next) =>
+    set(
+      produce<FormEditorState>((state) => {
+        const page = state.content?.pages.find((p) => p.id === pageId);
+        if (!page) return;
+        if (next === null) delete page.defaultNext;
+        else page.defaultNext = next;
+        markChange(state, "hard");
+      }),
+    ),
+
   // ─── Start / End page ──────────────────────────────────────────────────────
 
   updateStartPage: (patch) =>
@@ -502,12 +563,18 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
 
   // ─── Logic rules ───────────────────────────────────────────────────────────
 
+  // Logic changes are HARD changes, not soft ones. A rule changes WHICH
+  // QUESTIONS GET ASKED — that is the shape of the response data, so it must
+  // mint a new publishVersion. If it stayed soft, a republish would reuse the
+  // same version, and a respondent who loaded the old snapshot would be
+  // validated against logic they never saw.
+
   addLogicRule: (rule) =>
     set(
       produce<FormEditorState>((state) => {
         if (!state.content) return;
         state.content.logic.push(rule);
-        markChange(state, "soft");
+        markChange(state, "hard");
       }),
     ),
 
@@ -517,7 +584,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
         const rule = state.content?.logic.find((r) => r.id === ruleId);
         if (!rule) return;
         Object.assign(rule, patch);
-        markChange(state, "soft");
+        markChange(state, "hard");
       }),
     ),
 
@@ -526,7 +593,7 @@ export const useFormEditorStore = create<FormEditorState>((set) => ({
       produce<FormEditorState>((state) => {
         if (!state.content) return;
         state.content.logic = state.content.logic.filter((r) => r.id !== ruleId);
-        markChange(state, "soft");
+        markChange(state, "hard");
       }),
     ),
 
